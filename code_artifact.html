@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>디지털 도장 및 사인 생성기</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@700&family=East+Sea+Dokdo&family=Nanum+Pen+Script&family=Jua&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            background-color: #f3f4f6; 
+            font-family: 'Nanum Myeongjo', serif; 
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .font-myeongjo { font-family: 'Nanum Myeongjo', serif; }
+        .font-dokdo { font-family: 'East Sea Dokdo', cursive; }
+        .font-pen { font-family: 'Nanum Pen Script', cursive; }
+        .font-jua { font-family: 'Jua', sans-serif; }
+        /* 캔버스 드로잉 시 화면 스크롤 방지 */
+        canvas { touch-action: none; }
+    </style>
+</head>
+<body class="md:py-8 md:px-4 text-gray-800">
+
+<div class="max-w-lg mx-auto bg-white min-h-screen md:min-h-0 md:rounded-2xl shadow-xl overflow-hidden flex flex-col relative">
+    <!-- Header -->
+    <header class="bg-red-600 text-white p-5 text-center shadow-md">
+        <h1 class="text-2xl font-bold tracking-wider">디지털 도장 & 서명 센터</h1>
+    </header>
+
+    <!-- Tab Navigation -->
+    <div class="flex border-b bg-gray-50 sticky top-0 z-10">
+        <button onclick="switchTab('stamp')" id="tab-stamp" class="flex-1 py-4 text-sm md:text-base font-bold border-b-4 border-red-600 text-red-600 transition-colors bg-white">1. 디지털 도장</button>
+        <button onclick="switchTab('sticker')" id="tab-sticker" class="flex-1 py-4 text-sm md:text-base font-bold text-gray-400 border-b-4 border-transparent transition-colors hover:bg-gray-100">2. 학급 로고</button>
+        <button onclick="switchTab('sign')" id="tab-sign" class="flex-1 py-4 text-sm md:text-base font-bold text-gray-400 border-b-4 border-transparent transition-colors hover:bg-gray-100">3. 커스텀 사인</button>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 p-6 overflow-y-auto pb-10">
+        
+        <!-- Tab 1: Stamp Generator -->
+        <div id="content-stamp" class="tab-content active space-y-6">
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2">이름 입력 <span class="text-xs text-gray-500 font-normal">(3글자 입력 시 '인' 자동 추가)</span></label>
+                <input type="text" id="stamp-name" value="홍길동" placeholder="이름을 입력하세요" class="w-full border-2 border-gray-200 p-3 rounded-xl focus:outline-none focus:border-red-500 text-lg transition-colors">
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">한글 글씨체</label>
+                    <select id="stamp-font" class="w-full border-2 border-gray-200 p-3 rounded-xl focus:outline-none focus:border-red-500 bg-white cursor-pointer">
+                        <option value="Nanum Myeongjo" class="font-myeongjo">나눔명조</option>
+                        <option value="East Sea Dokdo" class="font-dokdo">독도체</option>
+                        <option value="Nanum Pen Script" class="font-pen">나눔필기체</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">테두리 모양</label>
+                    <select id="stamp-shape" class="w-full border-2 border-gray-200 p-3 rounded-xl focus:outline-none focus:border-red-500 bg-white cursor-pointer">
+                        <option value="square">사각형</option>
+                        <option value="circle">원형</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="flex flex-col items-center mt-6 p-6 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-300">
+                <canvas id="stamp-canvas" width="200" height="200" class="bg-transparent drop-shadow-md"></canvas>
+            </div>
+            
+            <button onclick="downloadCanvas('stamp-canvas', '디지털_도장.png')" class="w-full bg-red-600 text-white font-bold text-lg py-4 rounded-xl shadow-lg hover:bg-red-700 active:scale-95 transition-all mt-4 flex justify-center items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                투명 배경으로 다운로드 (PNG)
+            </button>
+        </div>
+
+        <!-- Tab 2: Sticker Generator -->
+        <div id="content-sticker" class="tab-content space-y-6">
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2">학급 문구 입력</label>
+                <input type="text" id="sticker-text" value="참 잘했어요!" placeholder="문구를 입력하세요" class="w-full border-2 border-gray-200 p-3 rounded-xl focus:outline-none focus:border-yellow-500 font-jua text-lg transition-colors">
+            </div>
+            
+            <div class="flex flex-col items-center mt-6 p-6 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-300">
+                <canvas id="sticker-canvas" width="240" height="240" class="bg-transparent drop-shadow-md"></canvas>
+            </div>
+            
+            <button onclick="downloadCanvas('sticker-canvas', '학급_로고.png')" class="w-full bg-yellow-500 text-white font-bold text-lg py-4 rounded-xl shadow-lg hover:bg-yellow-600 active:scale-95 transition-all mt-4 flex justify-center items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                스티커 다운로드 (PNG)
+            </button>
+        </div>
+
+        <!-- Tab 3: Signature Pad -->
+        <div id="content-sign" class="tab-content space-y-6">
+            <div class="flex justify-between items-end mb-2">
+                <label class="block text-sm font-bold text-gray-700">자유롭게 서명하세요</label>
+                <button onclick="clearSignature()" class="text-sm bg-gray-200 hover:bg-gray-300 text-gray-700 py-1.5 px-4 rounded-lg font-bold transition-colors">
+                    지우기
+                </button>
+            </div>
+            
+            <div class="border-2 border-gray-300 rounded-2xl overflow-hidden bg-white shadow-inner relative">
+                <!-- 캔버스 크기는 JS에서 부모 컨테이너 크기에 맞춰 자동 조절됩니다 -->
+                <canvas id="sign-canvas" height="250" class="w-full cursor-crosshair bg-transparent block touch-none" style="background-image: radial-gradient(#e5e7eb 1px, transparent 1px); background-size: 20px 20px;"></canvas>
+            </div>
+            
+            <button onclick="downloadCanvas('sign-canvas', '커스텀_서명.png')" class="w-full bg-gray-800 text-white font-bold text-lg py-4 rounded-xl shadow-lg hover:bg-gray-900 active:scale-95 transition-all flex justify-center items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                투명 배경 서명 다운로드 (PNG)
+            </button>
+        </div>
+
+    </main>
+</div>
+
+<script>
+    /* --- 공통 탭 전환 로직 --- */
+    function switchTab(tab) {
+        // 모든 탭 컨텐츠 숨기기
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        // 모든 탭 버튼 스타일 초기화
+        document.querySelectorAll('[id^="tab-"]').forEach(btn => {
+            btn.classList.remove('border-red-600', 'text-red-600', 'border-yellow-500', 'text-yellow-500', 'border-gray-800', 'text-gray-800', 'bg-white');
+            btn.classList.add('border-transparent', 'text-gray-400');
+        });
+        
+        // 선택된 탭 컨텐츠 보이기
+        document.getElementById('content-' + tab).classList.add('active');
+        
+        // 선택된 탭 버튼 스타일 활성화
+        let activeBtn = document.getElementById('tab-' + tab);
+        activeBtn.classList.remove('border-transparent', 'text-gray-400');
+        activeBtn.classList.add('bg-white'); // 활성화된 탭 배경 흰색
+        
+        if (tab === 'stamp') activeBtn.classList.add('border-red-600', 'text-red-600');
+        if (tab === 'sticker') activeBtn.classList.add('border-yellow-500', 'text-yellow-500');
+        if (tab === 'sign') activeBtn.classList.add('border-gray-800', 'text-gray-800');
+        
+        // 각 탭에 진입할 때마다 캔버스 렌더링/리사이즈
+        if(tab === 'stamp') drawStamp();
+        if(tab === 'sticker') drawSticker();
+        if(tab === 'sign') {
+            // 서명 캔버스는 표시될 때 너비를 다시 계산해야 함
+            setTimeout(initSignatureCanvas, 50); 
+        }
+    }
+
+    /* --- 1. 디지털 도장 (Stamp) 로직 --- */
+    const stampName = document.getElementById('stamp-name');
+    const stampFont = document.getElementById('stamp-font');
+    const stampShape = document.getElementById('stamp-shape');
+    const stampCanvas = document.getElementById('stamp-canvas');
+    const stampCtx = stampCanvas.getContext('2d');
+
+    function drawStamp() {
+        stampCtx.clearRect(0, 0, stampCanvas.width, stampCanvas.height);
+        
+        let name = stampName.value.trim();
+        // 3글자 입력 시 끝에 '인' 추가하여 4글자로 맞춤
+        if (name.length === 3) name += '인'; 
+        
+        const font = stampFont.value;
+        const shape = stampShape.value;
+        const color = '#dc2626'; // Tailwind red-600 (인주 색상)
+        const size = 180;
+        const center = stampCanvas.width / 2;
+        
+        stampCtx.strokeStyle = color;
+        stampCtx.lineWidth = 8;
+        
+        // 테두리 그리기
+        if (shape === 'square') {
+            stampCtx.lineJoin = 'miter';
+            // 약간 안쪽으로 사각형 그리기 (끝이 잘리지 않도록)
+            stampCtx.strokeRect(center - size/2 + 5, center - size/2 + 5, size - 10, size - 10);
+        } else {
+            stampCtx.beginPath();
+            stampCtx.arc(center, center, size/2 - 5, 0, Math.PI * 2);
+            stampCtx.stroke();
+        }
+        
+        stampCtx.fillStyle = color;
+        stampCtx.textAlign = 'center';
+        stampCtx.textBaseline = 'middle';
+        
+        // 글자 수에 따른 텍스트 배치
+        if (name.length === 4) {
+            stampCtx.font = `bold 60px "${font}"`;
+            // 도장 전통 순서: 우상(0), 우하(1), 좌상(2), 좌하(3)
+            stampCtx.fillText(name[0], center + 38, center - 40);
+            stampCtx.fillText(name[1], center + 38, center + 40);
+            stampCtx.fillText(name[2], center - 38, center - 40);
+            stampCtx.fillText(name[3], center - 38, center + 40);
+        } else if (name.length === 2) {
+            stampCtx.font = `bold 75px "${font}"`;
+            stampCtx.fillText(name[0], center, center - 40);
+            stampCtx.fillText(name[1], center, center + 40);
+        } else if (name.length > 0) {
+            stampCtx.font = `bold ${Math.min(120, 140/name.length)}px "${font}"`;
+            stampCtx.fillText(name, center, center);
+        }
+    }
+
+    // 입력값이 변경될 때마다 다시 그리기
+    ['input', 'change'].forEach(evt => {
+        stampName.addEventListener(evt, drawStamp);
+        stampFont.addEventListener(evt, drawStamp);
+        stampShape.addEventListener(evt, drawStamp);
+    });
+
+    /* --- 2. 학급 로고 스티커 로직 --- */
+    const stickerText = document.getElementById('sticker-text');
+    const stickerCanvas = document.getElementById('sticker-canvas');
+    const stickerCtx = stickerCanvas.getContext('2d');
+
+    function drawSticker() {
+        stickerCtx.clearRect(0, 0, stickerCanvas.width, stickerCanvas.height);
+        const center = stickerCanvas.width / 2;
+        
+        // 노란색 배경 원 그리기
+        stickerCtx.beginPath();
+        stickerCtx.arc(center, center, 115, 0, Math.PI * 2);
+        stickerCtx.fillStyle = '#fef08a'; // Tailwind yellow-200
+        stickerCtx.fill();
+        
+        // 점선 테두리 그리기
+        stickerCtx.strokeStyle = '#eab308'; // Tailwind yellow-500
+        stickerCtx.lineWidth = 6;
+        stickerCtx.setLineDash([12, 10]); // 점선 패턴 설정
+        stickerCtx.beginPath();
+        stickerCtx.arc(center, center, 100, 0, Math.PI * 2);
+        stickerCtx.stroke();
+        stickerCtx.setLineDash([]); // 패턴 초기화
+        
+        // 텍스트 설정 (Jua 폰트)
+        stickerCtx.fillStyle = '#422006'; // 진한 갈색 글씨
+        stickerCtx.textAlign = 'center';
+        stickerCtx.textBaseline = 'middle';
+        stickerCtx.font = '28px "Jua", sans-serif';
+        
+        const text = stickerText.value.trim() || "참 잘했어요!";
+        // 텍스트가 길 경우 줄바꿈 처리 (최대 7글자씩)
+        const lines = text.match(/.{1,7}/g) || [];
+        
+        lines.forEach((line, i) => {
+            // 줄 수에 따라 세로 위치 계산하여 중앙 정렬
+            const yOffset = (i - (lines.length - 1) / 2) * 35;
+            stickerCtx.fillText(line, center, center + yOffset);
+        });
+    }
+    stickerText.addEventListener('input', drawSticker);
+
+    /* --- 3. 커스텀 서명 (Signature) 로직 --- */
+    const signCanvas = document.getElementById('sign-canvas');
+    const signCtx = signCanvas.getContext('2d');
+    let isDrawing = false;
+    let lastX = 0;
+    let lastY = 0;
+
+    // 부모 컨테이너 크기에 맞춰 캔버스 해상도 조정
+    function initSignatureCanvas() {
+        const container = signCanvas.parentElement;
+        signCanvas.width = container.clientWidth;
+        
+        // 컨텍스트 초기화 방지를 위해 매번 설정 재적용
+        signCtx.lineJoin = 'round';
+        signCtx.lineCap = 'round';
+        signCtx.lineWidth = 5;
+        signCtx.strokeStyle = '#0f172a'; // 검정/진한 남색
+    }
+
+    window.addEventListener('resize', () => {
+        if (document.getElementById('content-sign').classList.contains('active')) {
+            // 리사이즈 시 기존 서명이 날아가지 않도록 이미지 데이터 백업
+            const tempImg = signCtx.getImageData(0, 0, signCanvas.width, signCanvas.height);
+            initSignatureCanvas();
+            signCtx.putImageData(tempImg, 0, 0);
+        }
+    });
+
+    function getPointerPos(e) {
+        const rect = signCanvas.getBoundingClientRect();
+        // 모바일 터치 이벤트 확인
+        if (e.touches && e.touches.length > 0) {
+            return {
+                x: e.touches[0].clientX - rect.left,
+                y: e.touches[0].clientY - rect.top
+            };
+        }
+        // 마우스 이벤트
+        return {
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top
+        };
+    }
+
+    function startDrawing(e) {
+        e.preventDefault(); // 드래그 시 화면 스크롤 방지
+        isDrawing = true;
+        const pos = getPointerPos(e);
+        lastX = pos.x;
+        lastY = pos.y;
+    }
+
+    function draw(e) {
+        if (!isDrawing) return;
+        e.preventDefault();
+        const pos = getPointerPos(e);
+        
+        signCtx.beginPath();
+        signCtx.moveTo(lastX, lastY);
+        signCtx.lineTo(pos.x, pos.y);
+        signCtx.stroke();
+        
+        lastX = pos.x;
+        lastY = pos.y;
+    }
+
+    function stopDrawing() {
+        isDrawing = false;
+    }
+
+    function clearSignature() {
+        signCtx.clearRect(0, 0, signCanvas.width, signCanvas.height);
+    }
+
+    // 마우스 이벤트 리스너
+    signCanvas.addEventListener('mousedown', startDrawing);
+    signCanvas.addEventListener('mousemove', draw);
+    signCanvas.addEventListener('mouseup', stopDrawing);
+    signCanvas.addEventListener('mouseout', stopDrawing);
+    
+    // 터치 이벤트 리스너 (모바일 완벽 지원)
+    signCanvas.addEventListener('touchstart', startDrawing, {passive: false});
+    signCanvas.addEventListener('touchmove', draw, {passive: false});
+    signCanvas.addEventListener('touchend', stopDrawing);
+    signCanvas.addEventListener('touchcancel', stopDrawing);
+
+
+    /* --- 공통 다운로드 함수 --- */
+    function downloadCanvas(canvasId, filename) {
+        const canvas = document.getElementById(canvasId);
+        const link = document.createElement('a');
+        link.download = filename;
+        // PNG 포맷은 기본적으로 배경 투명화가 지원됨
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    }
+
+    /* --- 초기 실행 --- */
+    window.onload = () => {
+        // 웹 폰트가 완전히 로드된 후 렌더링되도록 지연
+        document.fonts.ready.then(() => {
+            drawStamp();
+            drawSticker();
+            initSignatureCanvas();
+        });
+    };
+</script>
+</body>
+</html>
