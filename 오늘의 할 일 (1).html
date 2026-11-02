@@ -1,553 +1,170 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>오늘의 할 일</title>
-<style>
-:root {
-  --bg: #f8fafc;
-  --card: #ffffff;
-  --tx: #1e293b;
-  --sub: #64748b;
-  --line: #e2e8f0;
-  --pri: #4f46e5;
-  --pri-hover: #4338ca;
-  --ok: #16a34a;
-  color-scheme: light;
-  box-sizing: border-box;
-  padding-top: env(safe-area-inset-top, 0px);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #0f172a;
-    --card: #1e293b;
-    --tx: #f1f5f9;
-    --sub: #94a3b8;
-    --line: #334155;
-    --pri: #6366f1;
-    --pri-hover: #818cf8;
-    --ok: #4ade80;
-    color-scheme: dark;
-  }
-}
-
-:root[data-theme="dark"] {
-  --bg: #0f172a;
-  --card: #1e293b;
-  --tx: #f1f5f9;
-  --sub: #94a3b8;
-  --line: #334155;
-  --pri: #6366f1;
-  --pri-hover: #818cf8;
-  --ok: #4ade80;
-  color-scheme: dark;
-}
-
-* { box-sizing: border-box; }
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--tx);
-  font-family: -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
-  line-height: 1.5;
-  -webkit-tap-highlight-color: transparent;
-}
-
-main {
-  max-width: 640px;
-  margin: 0 auto;
-  padding: 24px 16px 48px;
-}
-
-h1 {
-  font-size: 24px;
-  font-weight: 800;
-  margin: 0 0 16px;
-  letter-spacing: -0.5px;
-}
-
-/* 프로젝트 바로가기 카드 섹션 */
-.project-links {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-@media (max-width: 480px) {
-  .project-links {
-    grid-template-columns: 1fr;
-  }
-}
-
-.project-card {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: 14px 16px;
-  text-decoration: none;
-  color: var(--tx);
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-  transition: all 0.2s ease;
-}
-
-.project-card:hover {
-  border-color: var(--pri);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px -2px rgba(79, 70, 229, 0.1);
-}
-
-.project-card .p-title {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--pri);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.project-card .p-desc {
-  font-size: 12px;
-  color: var(--sub);
-}
-
-.card {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  padding: 18px;
-  margin-bottom: 16px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
-}
-
-.datebar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.datebar .t {
-  flex: 1;
-  font-weight: 700;
-  font-size: 16px;
-  min-width: 150px;
-  text-align: center;
-}
-
-button, input, select {
-  font: inherit;
-  color: var(--tx);
-}
-
-.btn {
-  background: var(--bg);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 8px 12px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: all 0.2s ease;
-}
-
-.btn:hover {
-  border-color: var(--pri);
-  background: var(--line);
-}
-
-input[type=date], input[type=text], select {
-  background: var(--bg);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 10px 12px;
-  outline: none;
-  transition: border-color 0.2s;
-}
-
-input[type=text]:focus, select:focus, input[type=date]:focus {
-  border-color: var(--pri);
-}
-
-.stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  text-align: center;
-}
-
-.stats div {
-  background: var(--bg);
-  padding: 10px;
-  border-radius: 10px;
-  border: 1px solid var(--line);
-}
-
-.stats b {
-  display: block;
-  font-size: 22px;
-  font-weight: 700;
-}
-
-.stats span {
-  font-size: 12px;
-  color: var(--sub);
-}
-
-.bar {
-  height: 10px;
-  background: var(--line);
-  border-radius: 99px;
-  overflow: hidden;
-  margin-top: 14px;
-}
-
-.bar i {
-  display: block;
-  height: 100%;
-  width: 0;
-  background: var(--pri);
-  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.bar i.full {
-  background: var(--ok);
-}
-
-.pct {
-  display: flex;
-  justify-content: space-between;
-  font-size: 13px;
-  color: var(--sub);
-  margin-top: 8px;
-  font-weight: 500;
-}
-
-.add {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.add input[type=text] {
-  flex: 1;
-  min-width: 180px;
-}
-
-.add .go {
-  background: var(--pri);
-  color: #fff;
-  border: 0;
-  border-radius: 8px;
-  padding: 10px 20px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: background 0.2s;
-}
-
-.add .go:hover {
-  background: var(--pri-hover);
-}
-
-.chips {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  margin-bottom: 14px;
-}
-
-.chip {
-  border: 1px solid var(--line);
-  background: var(--bg);
-  border-radius: 99px;
-  padding: 6px 14px;
-  font-size: 13px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.2s;
-}
-
-.chip.on {
-  background: var(--pri);
-  border-color: var(--pri);
-  color: #fff;
-}
-
-ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-li {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 6px;
-  border-bottom: 1px solid var(--line);
-  transition: background 0.2s;
-}
-
-li:last-child {
-  border: 0;
-}
-
-li input[type=checkbox] {
-  width: 20px;
-  height: 20px;
-  accent-color: var(--pri);
-  cursor: pointer;
-}
-
-li .tx {
-  flex: 1;
-  word-break: break-all;
-  font-size: 15px;
-}
-
-li.done .tx {
-  text-decoration: line-through;
-  color: var(--sub);
-}
-
-.tag {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--pri);
-  background: var(--bg);
-  border: 1px solid var(--pri);
-  border-radius: 99px;
-  padding: 2px 8px;
-}
-
-.del {
-  background: none;
-  border: 0;
-  color: var(--sub);
-  cursor: pointer;
-  font-size: 16px;
-  padding: 4px 8px;
-  border-radius: 6px;
-  transition: color 0.2s, background 0.2s;
-}
-
-.del:hover {
-  color: #ef4444;
-  background: rgba(239, 68, 68, 0.1);
-}
-
-.empty {
-  text-align: center;
-  color: var(--sub);
-  padding: 24px 0;
-  font-size: 14px;
-}
-
-.sum {
-  font-size: 13px;
-  color: var(--sub);
-  margin-top: 10px;
-  text-align: right;
-}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="바이브코딩과 다양한 AI 도구를 좋아하는 한정우의 개인 홈페이지">
+  <title>한정우 | 개인 홈페이지</title>
+  <style>
+    :root {
+      --bg: #f7f7fb; --paper: #fff; --ink: #25243a; --muted: #68677b;
+      --accent: #7057c8; --accent-light: #eee9ff; --line: #e8e6f0;
+      --mint: #e8f6f0; --shadow: 0 18px 50px rgba(45,36,83,.07);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; color: var(--ink); background: var(--bg); font-family: -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans KR",sans-serif; line-height: 1.7; }
+    a { color: inherit; }
+    .container { width: min(980px, calc(100% - 36px)); margin: 0 auto; }
+    .topbar { padding: 22px 0; }
+    .nav { display: flex; justify-content: space-between; align-items: center; gap: 18px; }
+    .logo { font-size: .95rem; font-weight: 850; letter-spacing: .06em; text-decoration: none; }
+    .nav-links { display: flex; gap: 22px; flex-wrap: wrap; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: .9rem; }
+    .nav-links a:hover,.nav-links a:focus-visible { color: var(--accent); }
+    .hero { position: relative; overflow: hidden; padding: clamp(30px,7vw,70px); border: 1px solid #e9e3ff; border-radius: 28px; background: linear-gradient(125deg,#f0ecff 0%,#fff 65%,#f0faf5 100%); box-shadow: var(--shadow); }
+    .hero:after { content: "✦"; position: absolute; right: 8%; top: 12%; color: #d9d0ff; font-size: clamp(4rem,10vw,8rem); line-height: 1; pointer-events: none; }
+    .eyebrow { position: relative; z-index: 1; color: var(--accent); font-size: .78rem; font-weight: 800; letter-spacing: .18em; }
+    h1 { position: relative; z-index: 1; margin: 13px 0 18px; font-size: clamp(2.4rem,7vw,4.3rem); line-height: 1.16; letter-spacing: -.06em; }
+    .intro { position: relative; z-index: 1; max-width: 620px; margin: 0; color: #59576d; font-size: clamp(1rem,2.4vw,1.13rem); }
+    .pills { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; }
+    .pill { padding: 6px 12px; border-radius: 999px; background: var(--accent-light); color: #5c45b0; font-size: .83rem; font-weight: 700; }
+    main { padding: 34px 0 56px; }
+    section { margin-top: 34px; scroll-margin-top: 20px; }
+    .section-title { margin: 0 0 4px; font-size: 1.4rem; letter-spacing: -.035em; }
+    .section-desc { margin: 0 0 17px; color: var(--muted); font-size: .93rem; }
+    .card { padding: 24px; border: 1px solid var(--line); border-radius: 20px; background: var(--paper); }
+    .about-text { margin: 0; color: #555469; }
+    .grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 15px; }
+    .interest-card { min-height: 170px; }
+    .icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; background: var(--accent-light); font-size: 1.3rem; }
+    .interest-card:nth-child(2) .icon { background: var(--mint); }
+    .card h3 { margin: 12px 0 5px; font-size: 1.03rem; }
+    .card p { color: var(--muted); margin: 0; font-size: .93rem; }
+    .activity-list { display: grid; gap: 12px; }
+    .activity { display: flex; align-items: flex-start; gap: 13px; }
+    .dot { flex: 0 0 9px; height: 9px; margin-top: 9px; border-radius: 50%; background: var(--accent); }
+    .activity strong { display: block; margin-bottom: 2px; }
+    .activity span { display: block; color: var(--muted); font-size: .92rem; }
+    
+    /* 프로젝트 영역 스타일 */
+    .project-list { display: grid; gap: 18px; }
+    .project { display: flex; gap: 16px; align-items: flex-start; }
+    .project .icon { flex-shrink: 0; }
+    .project h3 { margin: 0 0 6px; }
+    .tag { display: inline-block; margin-top: 12px; padding: 4px 10px; border-radius: 999px; background: #f1eef9; color: #685696; font-size: .78rem; font-weight: 700; }
+    .project-link { display: inline-flex; align-items: center; gap: 7px; margin-top: 14px; padding: 9px 13px; border-radius: 10px; background: var(--accent); color: #fff; font-size: .88rem; font-weight: 750; text-decoration: none; }
+    .project-link:hover,.project-link:focus-visible { background: #5b43b0; }
+    .project-note { margin-top: 10px !important; font-size: .82rem !important; }
+    
+    .contact-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .email { font-weight: 750; color: var(--accent); overflow-wrap: anywhere; }
+    .email-note { margin-top: 10px !important; font-size: .82rem !important; }
+    footer { padding: 23px 0 30px; color: #8b899b; text-align: center; font-size: .82rem; }
+    @media (max-width: 620px) {
+      .container { width: calc(100% - 24px); }
+      .topbar { padding: 16px 0; }
+      .nav { align-items: flex-start; flex-direction: column; }
+      .nav-links { gap: 14px; }
+      .hero { border-radius: 22px; padding: 30px 22px; }
+      .hero:after { right: 5%; top: 8%; opacity: .65; }
+      .grid { grid-template-columns: 1fr; }
+      .card { padding: 20px; }
+    }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  </style>
 </head>
 <body>
-<main>
-  <h1>📝 오늘의 할 일</h1>
+  <header class="topbar">
+    <nav class="container nav" aria-label="주요 메뉴">
+      <a class="logo" href="#home">HAN JUNGWOO</a>
+      <div class="nav-links">
+        <a href="#about">소개</a><a href="#interests">관심사</a><a href="#activities">주요 활동</a><a href="#projects">프로젝트</a><a href="#contact">연락처</a>
+      </div>
+    </nav>
+  </header>
 
-  <!-- 실습 프로젝트 바로가기 링크 카드 -->
-  <div class="project-links">
-    <a href="game.html" target="_blank" class="project-card">
-      <span class="p-title">🎮 KDC 주류 맞추기 게임</span>
-      <span class="p-desc">한국십진분류법 카드 매칭 교구 학습</span>
-    </a>
-    <a href="stamp.html" target="_blank" class="project-card">
-      <span class="p-title">🏷️ 디지털 도장 & 서명 생성기</span>
-      <span class="p-desc">도장, 학급 스티커, 커스텀 서명 제작</span>
-    </a>
+  <div class="container" id="home">
+    <section class="hero" aria-labelledby="main-heading">
+      <div class="eyebrow">PERSONAL WEBSITE · 2026</div>
+      <h1 id="main-heading">안녕하세요,<br>한정우입니다.</h1>
+      <p class="intro">바이브코딩을 좋아하는 한정우입니다. 다양한 AI 도구를 활용해 아이디어를 구체화하고, 직접 만들어 보는 과정에 관심이 있습니다.</p>
+      <div class="pills" aria-label="관심 분야"><span class="pill">바이브코딩</span><span class="pill">AI 도구</span><span class="pill">웹 프로젝트</span></div>
+    </section>
   </div>
 
-  <div class="card">
-    <div class="datebar">
-      <button class="btn" id="prev" aria-label="전날">◀</button>
-      <div class="t" id="title"></div>
-      <button class="btn" id="next" aria-label="다음날">▶</button>
-      <input type="date" id="pick">
-      <button class="btn" id="today">오늘</button>
-    </div>
-  </div>
+  <main class="container">
+    <section id="about">
+      <h2 class="section-title">저를 소개합니다</h2>
+      <p class="section-desc">방문자가 가장 먼저 알아야 할 기본 정보입니다.</p>
+      <div class="card"><p class="about-text">안녕하세요 바이브코딩을 좋아하는 한정우입니다. 새로운 AI 도구를 살펴보고, 이를 활용해 필요한 것을 직접 만들어 보는 데 흥미가 있습니다.</p></div>
+    </section>
 
-  <div class="card">
-    <div class="stats">
-      <div><b id="nTotal">0</b><span>전체</span></div>
-      <div><b id="nDone">0</b><span>완료</span></div>
-      <div><b id="nLeft">0</b><span>남은 일</span></div>
-    </div>
-    <div class="bar"><i id="fill"></i></div>
-    <div class="pct"><span id="msg">할 일을 추가해 보세요</span><span id="pct">0%</span></div>
-  </div>
+    <section id="interests">
+      <h2 class="section-title">관심사</h2><p class="section-desc">평소 관심을 가지고 탐색하는 분야입니다.</p>
+      <div class="grid">
+        <article class="card interest-card"><div class="icon" aria-hidden="true">⌘</div><h3>바이브코딩</h3><p>AI와 함께 아이디어를 구체화하고 웹사이트나 작은 서비스를 만들어 보는 것을 좋아합니다.</p></article>
+        <article class="card interest-card"><div class="icon" aria-hidden="true">✦</div><h3>여러 가지 AI 툴</h3><p>다양한 AI 도구의 기능을 알아보고 공부와 프로젝트에 활용할 방법을 찾아봅니다.</p></article>
+      </div>
+    </section>
 
-  <div class="card">
-    <div class="add">
-      <input type="text" id="txt" placeholder="할 일을 입력하세요" maxlength="80">
-      <select id="cat"></select>
-      <button class="go" id="addBtn">추가</button>
-    </div>
-  </div>
+    <section id="activities">
+      <h2 class="section-title">주요 활동</h2><p class="section-desc">현재까지 제공된 학력 및 학업 정보를 정리했습니다.</p>
+      <div class="card activity-list">
+        <div class="activity"><span class="dot" aria-hidden="true"></span><div><strong>대학교 수업 이수 중</strong><span>약 70학점의 수업을 이수하고 있습니다.</span></div></div>
+        <div class="activity"><span class="dot" aria-hidden="true"></span><div><strong>고등학교 졸업</strong><span>고등학교 과정을 졸업했습니다.</span></div></div>
+      </div>
+    </section>
 
-  <div class="card">
-    <div class="chips" id="chips"></div>
-    <ul id="list"></ul>
-    <div class="sum" id="sum"></div>
-  </div>
-</main>
+    <!-- 프로젝트 섹션 (저장소 실제 파일명에 100% 매칭 완료) -->
+    <section id="projects">
+      <h2 class="section-title">개별 프로젝트</h2>
+      <p class="section-desc">직접 기획하거나 제작한 프로젝트를 소개합니다.</p>
+      
+      <div class="project-list">
+        <!-- 1. 오늘의 할 일 관리 앱 -->
+        <article class="card project">
+          <div class="icon" aria-hidden="true">✓</div>
+          <div>
+            <h3>오늘의 할 일 관리 앱</h3>
+            <p>오늘 해야 할 일을 기록하고 완료 여부를 확인해 하루의 할 일을 정리하는 웹 애플리케이션 프로젝트입니다.</p>
+            <span class="tag">개인 프로젝트</span><br>
+            <a class="project-link" href="./%EC%98%A4%EB%8A%98%EC%9D%98%20%ED%95%A0%20%EC%9D%BC%20(1).html" target="_blank">프로젝트 열기 ↗</a>
+          </div>
+        </article>
 
-<script>
-const CATS = ['학업', '과제', '시험', '일상', '운동', '기타'];
-const KEY = 'todo-app-v2';
-let tasks = [], cur = ymd(new Date()), filter = '전체';
+        <!-- 2. KDC 한국십진분류법 주류 연결하기 게임 -->
+        <article class="card project">
+          <div class="icon" aria-hidden="true">📚</div>
+          <div>
+            <h3>KDC 한국십진분류법 주류 연결하기 게임</h3>
+            <p>초등학생 및 저학년 학생들의 집중력을 높이고 즐겁게 학습할 수 있는 2D 카드 뒤집기 교육용 디지털 교구입니다. 000(총류)부터 900(역사)까지의 분류 기호와 주제를 짝지어 매칭합니다.</p>
+            <span class="tag">교육용 디지털 교구</span><br>
+            <a class="project-link" href="./gemini-code-1793601846112.html" target="_blank">게임 플레이하기 ↗</a>
+          </div>
+        </article>
 
-try {
-  tasks = JSON.parse(localStorage.getItem(KEY) || '[]');
-} catch (e) {
-  tasks = [];
-}
+        <!-- 3. 디지털 도장 및 사인 생성기 -->
+        <article class="card project">
+          <div class="icon" aria-hidden="true">🏷️</div>
+          <div>
+            <h3>디지털 도장 및 사인 생성기</h3>
+            <p>온라인 교육 활동이나 서류에 활용할 수 있는 도장 생성기입니다. 이름 기반의 전통 도장, 학급 칭찬 스티커 로고, 그리고 캔버스 터치 서명 패드를 제공하여 투명 PNG로 즉시 다운로드할 수 있습니다.</p>
+            <span class="tag">웹 유틸리티 도구</span><br>
+            <a class="project-link" href="./code_artifact.html" target="_blank">도장 만들기 ↗</a>
+          </div>
+        </article>
+      </div>
+    </section>
 
-function save() {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(tasks));
-  } catch (e) {}
-}
-
-function ymd(d) {
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const a = String(d.getDate()).padStart(2, '0');
-  return d.getFullYear() + '-' + m + '-' + a;
-}
-
-function parse(s) {
-  const [y, m, d] = s.split('-').map(Number);
-  return new Date(y, m - 1, d);
-}
-
-function shift(n) {
-  const d = parse(cur);
-  d.setDate(d.getDate() + n);
-  cur = ymd(d);
-  render();
-}
-
-const $ = id => document.getElementById(id);
-
-$('cat').innerHTML = CATS.map(c => '<option value="' + c + '">' + c + '</option>').join('');
-
-function render() {
-  const d = parse(cur);
-  const days = ['일', '월', '화', '수', '목', '금', '토'];
-  const isToday = cur === ymd(new Date());
-  
-  $('title').textContent = d.getFullYear() + '년 ' + (d.getMonth() + 1) + '월 ' + d.getDate() + '일 (' + days[d.getDay()] + ')' + (isToday ? ' · 오늘' : '');
-  $('pick').value = cur;
-
-  const day = tasks.filter(t => t.date === cur);
-  const done = day.filter(t => t.done).length;
-  const total = day.length;
-  const left = total - done;
-  const p = total ? Math.round(done / total * 100) : 0;
-
-  $('nTotal').textContent = total;
-  $('nDone').textContent = done;
-  $('nLeft').textContent = left;
-  $('fill').style.width = p + '%';
-  $('fill').className = (p === 100 && total) ? 'full' : '';
-  $('pct').textContent = p + '%';
-  $('msg').textContent = !total ? '할 일을 추가해 보세요' : left === 0 ? '🎉 모두 완료했어요!' : '남은 일이 ' + left + '개 있어요';
-
-  const chips = $('chips');
-  chips.innerHTML = '';
-  ['전체', ...CATS].forEach(c => {
-    const n = c === '전체' ? day.length : day.filter(t => t.cat === c).length;
-    const b = document.createElement('button');
-    b.className = 'chip' + (filter === c ? ' on' : '');
-    b.textContent = c + ' ' + n;
-    b.onclick = () => { filter = c; render(); };
-    chips.appendChild(b);
-  });
-
-  const ul = $('list');
-  ul.innerHTML = '';
-  const shown = day.filter(t => filter === '전체' || t.cat === filter);
-  
-  if (!shown.length) {
-    const e = document.createElement('div');
-    e.className = 'empty';
-    e.textContent = total ? '이 카테고리에는 할 일이 없어요' : '등록된 할 일이 없어요';
-    ul.appendChild(e);
-  }
-
-  shown.forEach(t => {
-    const li = document.createElement('li');
-    if (t.done) li.className = 'done';
-
-    const cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.checked = t.done;
-    cb.onchange = () => { t.done = cb.checked; save(); render(); };
-
-    const tx = document.createElement('span');
-    tx.className = 'tx';
-    tx.textContent = t.text;
-
-    const tg = document.createElement('span');
-    tg.className = 'tag';
-    tg.textContent = t.cat;
-
-    const x = document.createElement('button');
-    x.className = 'del';
-    x.textContent = '✕';
-    x.setAttribute('aria-label', '삭제');
-    x.onclick = () => {
-      tasks = tasks.filter(o => o.id !== t.id);
-      save();
-      render();
-    };
-
-    li.append(cb, tx, tg, x);
-    ul.appendChild(li);
-  });
-
-  $('sum').textContent = filter === '전체' ? '' : filter + ' 카테고리 보기 중';
-}
-
-function add() {
-  const v = $('txt').value.trim();
-  if (!v) return;
-  tasks.push({
-    id: Date.now() + Math.random(),
-    text: v,
-    cat: $('cat').value,
-    done: false,
-    date: cur
-  });
-  $('txt').value = '';
-  save();
-  render();
-  $('txt').focus();
-}
-
-$('addBtn').onclick = add;
-$('txt').addEventListener('keydown', e => { if (e.key === 'Enter') add(); });
-$('prev').onclick = () => shift(-1);
-$('next').onclick = () => shift(1);
-$('today').onclick = () => { cur = ymd(new Date()); render(); };
-$('pick').onchange = e => { if (e.target.value) { cur = e.target.value; render(); } };
-
-render();
-</script>
+    <section id="contact">
+      <h2 class="section-title">연락처</h2><p class="section-desc">이메일로 연락할 수 있습니다.</p>
+      <div class="card">
+        <div class="contact-row"><div><h3 style="margin:0 0 4px;">이메일</h3><p>연락처 정보</p></div><span class="email">hou7220@naver.com</span></div>
+        <p class="email-note">궁금한 점이나 협업 관련 문의는 위 이메일로 보내주세요.</p>
+      </div>
+    </section>
+  </main>
+  <footer class="container">© 2026 한정우 · 개인 홈페이지</footer>
 </body>
 </html>
