@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>자기평가 레이더 차트</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f4f6f9;--card:#fff;--tx:#1f2933;--mut:#6b7785;--grid:#d5dbe3;--bd:#d9dee6;--ink:#2f3b4b;--inkTx:#fff;--pre:#1d5fd6;--post:#d92d2d;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12161c;--card:#1b222b;--tx:#e8edf3;--mut:#9aa7b5;--grid:#3a4553;--bd:#2f3946;--ink:#cfd8e3;--inkTx:#12161c;--pre:#5b9bff;--post:#ff6b6b}}
+:root[data-theme="dark"]{--bg:#12161c;--card:#1b222b;--tx:#e8edf3;--mut:#9aa7b5;--grid:#3a4553;--bd:#2f3946;--ink:#cfd8e3;--inkTx:#12161c;--pre:#5b9bff;--post:#ff6b6b}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{margin:0;background:var(--bg);color:var(--tx);font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;font-size:16px;line-height:1.55}
+main{max-width:1060px;margin:0 auto;padding:16px 14px 40px}
+h1{font-size:24px;margin:4px 0}h2{font-size:17px;margin:0 0 10px}p{margin:0 0 8px}.mut{color:var(--mut);font-size:14px}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer;border:1px solid var(--bd);background:var(--card);border-radius:10px;padding:8px 14px;min-height:44px}
+button:focus-visible,input:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+button:disabled{opacity:.4;cursor:default}
+.bar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin:10px 0 14px}
+.seg{display:inline-flex;border:1px solid var(--bd);border-radius:10px;overflow:hidden}
+.seg button{border:0;border-radius:0;background:var(--card)}.seg button.on{background:var(--ink);color:var(--inkTx)}
+.grid{display:grid;gap:14px}
+@media (min-width:900px){.grid{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)}}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px}
+#ch svg{width:100%;height:auto;display:block}
+.rw,.hd{display:grid;grid-template-columns:minmax(0,1fr) 76px 76px 40px;gap:6px;margin-bottom:6px;align-items:center}
+.hd{font-size:14px;font-weight:600}.hd span:nth-child(2){color:var(--pre)}.hd span:nth-child(3){color:var(--post)}
+.rw input{width:100%;box-sizing:border-box;min-height:42px;padding:6px 8px;border:1px solid var(--bd);border-radius:8px;background:var(--bg)}
+.rw input[type=number]{text-align:right}.rw button{padding:0;min-height:42px}
+.act{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.sum p{margin:0 0 8px}
+.note{font-size:14px;color:var(--mut);margin-top:8px}
+</style>
+</head>
+<body>
+<main>
+<h1>📊 디지털 리터러시 자기평가 레이더 차트</h1>
+<p class="mut">사전평가(파란색)와 사후평가(빨간색)를 한 차트에 겹쳐서 변화를 한눈에 봐요.</p>
+<div class="bar">
+ <span>만점</span><div class="seg" id="scale"><button data-s="5">5점</button><button data-s="10">10점</button><button data-s="100">100점</button></div>
+ <button id="ex">예시 데이터</button><button id="rs">점수 초기화</button>
+</div>
+<div class="grid">
+ <section class="card"><h2>레이더 차트</h2><div id="ch"></div><p class="note" id="nt"></p>
+  <div class="act"><button id="sv" hidden>🖼️ 차트 이미지 저장 (PNG)</button><span class="mut" id="sm" role="status"></span></div></section>
+ <section class="card"><h2>점수 입력</h2>
+  <div class="hd"><span>영역명</span><span>사전</span><span>사후</span><span></span></div>
+  <div id="rows"></div>
+  <div class="act"><button id="add">＋ 영역 추가</button></div>
+  <p class="note">비워 둔 칸은 0점이 아니라 “미입력”으로 처리해요. 0 ~ 만점 범위를 벗어난 값은 자동으로 맞춰져요.</p></section>
+</div>
+<section class="card sum" style="margin-top:14px"><h2>분석 요약</h2><div id="su"></div></section>
+</main>
+<script>
+// 예시 데이터: [영역명, 사전, 사후] (100점 만점)
+const SAMPLE=[["정보검색 능력",45,78],["비판적 사고",38,71],["디지털 도구 활용",52,85],["협업 능력",60,80],["창의적 문제해결",41,75]];
+const $=s=>document.querySelector(s),esc=s=>s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let max=100,rows=SAMPLE.map(([n,a,b])=>({n,a,b})),DL=null,armed=0;
+// 점수 범위: 0 ~ 만점(max). 빈 칸은 null(미입력)로 두고, 범위를 벗어나면 0 또는 만점으로 맞춥니다.
+const num=v=>{if(v===""||v==null)return null;const x=parseFloat(v);return isNaN(x)?null:Math.min(max,Math.max(0,Math.round(x*10)/10))};
+
+function pal(light){
+ if(light)return{bg:"#ffffff",tx:"#1f2933",mut:"#6b7785",grid:"#d5dbe3",pre:"#1d5fd6",post:"#d92d2d"};
+ const s=getComputedStyle(document.documentElement),g=k=>s.getPropertyValue(k).trim();
+ return{bg:g("--card"),tx:g("--tx"),mut:g("--mut"),grid:g("--grid"),pre:g("--pre"),post:g("--post")};
+}
+function chart(light){
+ const P=pal(light),n=rows.length,cx=300,cy=270,R=150,ang=i=>(-90+360/n*i)*Math.PI/180;
+ const pt=(i,v)=>{const r=R*v/max;return[+(cx+r*Math.cos(ang(i))).toFixed(1),+(cy+r*Math.sin(ang(i))).toFixed(1)]};
+ let s=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 540" width="600" height="540" font-family="'IBM Plex Sans KR','Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif" role="img" aria-label="사전평가와 사후평가를 겹쳐 그린 레이더 차트"><rect width="600" height="540" fill="${P.bg}"/><text x="20" y="28" font-size="16" font-weight="600" fill="${P.tx}">디지털 리터러시 자기평가 (만점 ${max}점)</text>`;
+ for(let k=1;k<=5;k++)s+=`<polygon points="${rows.map((_,i)=>pt(i,max*k/5)).join(" ")}" fill="none" stroke="${P.grid}" stroke-width="1.2"/>`;
+ rows.forEach((_,i)=>{const[x,y]=pt(i,max);s+=`<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="${P.grid}"/>`});
+ for(let k=1;k<=5;k++)s+=`<text x="${cx+4}" y="${cy-R*k/5-2}" font-size="11" fill="${P.mut}">${+(max*k/5).toFixed(1)}</text>`;
+ // 미입력 영역은 꼭짓점을 만들지 않고 건너뛰어 이어 그립니다 (3개 이상: 다각형, 2개: 선, 1개: 점)
+ [["a",P.pre],["b",P.post]].forEach(([k,c])=>{
+  const q=rows.map((r,i)=>r[k]==null?null:pt(i,r[k])).filter(Boolean);
+  if(q.length>=3)s+=`<polygon points="${q.join(" ")}" fill="${c}" fill-opacity=".2" stroke="${c}" stroke-width="3" stroke-linejoin="round"/>`;
+  else if(q.length===2)s+=`<polyline points="${q.join(" ")}" fill="none" stroke="${c}" stroke-width="3"/>`;
+  q.forEach(([x,y])=>s+=`<circle cx="${x}" cy="${y}" r="5" fill="${c}" stroke="${P.bg}" stroke-width="2"/>`);
+ });
+ rows.forEach((r,i)=>{
+  const a=ang(i),c=Math.cos(a),sn=Math.sin(a),lx=(cx+(R+16)*c).toFixed(1),ly=cy+(R+16)*sn;
+  const an=c>.3?"start":c<-.3?"end":"middle",[y1,y2]=sn<-.5?[-20,-3]:sn>.5?[14,31]:[-2,16];
+  const sc=r.a==null&&r.b==null?`<tspan fill="${P.mut}">미입력</tspan>`:`<tspan fill="${P.pre}">사전 ${r.a??"-"}</tspan><tspan fill="${P.mut}"> · </tspan><tspan fill="${P.post}">사후 ${r.b??"-"}</tspan>`;
+  s+=`<text x="${lx}" y="${(ly+y1).toFixed(1)}" text-anchor="${an}" font-size="15" font-weight="600" fill="${P.tx}">${esc(r.n||"영역 "+(i+1))}</text><text x="${lx}" y="${(ly+y2).toFixed(1)}" text-anchor="${an}" font-size="13">${sc}</text>`;
+ });
+ return s+`<rect x="190" y="500" width="16" height="16" rx="3" fill="${P.pre}"/><text x="212" y="513" font-size="14" fill="${P.tx}">사전평가</text><rect x="320" y="500" width="16" height="16" rx="3" fill="${P.post}"/><text x="342" y="513" font-size="14" fill="${P.tx}">사후평가</text></svg>`;
+}
+function summary(){
+ const f=v=>+v.toFixed(1),avg=a=>a.reduce((s,v)=>s+v,0)/a.length,L=[];
+ const A=rows.filter(r=>r.a!=null),B=rows.filter(r=>r.b!=null);
+ const D=rows.filter(r=>r.a!=null&&r.b!=null).map(r=>({n:r.n||"이름 없음",a:r.a,b:r.b,d:f(r.b-r.a)}));
+ if(!A.length&&!B.length)return["점수를 입력하면 분석 요약이 여기에 나와요."];
+ if(D.length){
+  const pa=avg(D.map(x=>x.a)),pb=avg(D.map(x=>x.b)),g=pb-pa;
+  L.push(`사전평가 평균은 ${f(pa)}점, 사후평가 평균은 ${f(pb)}점으로 평균 ${f(Math.abs(g))}점${pa>0?`(사전 대비 약 ${Math.round(Math.abs(g)/pa*100)}%)`:""} ${g>=0?"올랐습니다":"내려갔습니다"}.${D.length<rows.length?` (사전·사후가 모두 입력된 ${D.length}개 영역 기준)`:""}`);
+  const hi=D.reduce((m,x)=>x.d>m.d?x:m),lo=D.reduce((m,x)=>x.d<m.d?x:m),sg=v=>(v>0?"+":"")+v+"점";
+  L.push(D.length>1?`가장 크게 성장한 영역은 '${hi.n}'(${sg(hi.d)}), 성장폭이 가장 작은 영역은 '${lo.n}'(${sg(lo.d)})입니다.`:`'${hi.n}' 영역은 ${sg(hi.d)} 변화했습니다.`);
+  const dn=D.filter(x=>x.d<0);if(dn.length)L.push(`사전보다 점수가 낮아진 영역: ${dn.map(x=>`'${x.n}'(${x.d}점)`).join(", ")}.`);
+ }else L.push(A.length&&!B.length?`사전평가 평균은 ${f(avg(A.map(r=>r.a)))}점입니다. 사후평가를 입력하면 변화를 비교해 드려요.`:`사후평가 평균은 ${f(avg(B.map(r=>r.b)))}점입니다. 사전평가를 입력하면 변화를 비교해 드려요.`);
+ if(B.length>1){const t=B.reduce((m,r)=>r.b>m.b?r:m),w=B.reduce((m,r)=>r.b<m.b?r:m);L.push(`사후평가에서 가장 높은 영역은 '${t.n}'(${t.b}점), 가장 낮은 영역은 '${w.n}'(${w.b}점)로, '${w.n}' 영역을 보완점으로 볼 수 있습니다.`)}
+ const ms=rows.filter(r=>r.a==null||r.b==null);if(ms.length)L.push(`입력되지 않은 값이 있는 영역(${ms.map(r=>r.n||"이름 없음").join(", ")})은 빠진 값을 제외하고 계산했습니다.`);
+ return L;
+}
+function upd(){
+ $("#ch").innerHTML=chart(false);
+ $("#su").innerHTML=summary().map(t=>`<p>${esc(t)}</p>`).join("");
+ const ms=rows.filter(r=>r.a==null||r.b==null).length;
+ $("#nt").textContent=ms?"미입력 영역은 0점이 아니라, 차트에서 건너뛰고 입력된 점들만 이어서 그려요.":"";
+}
+function drawRows(){
+ $("#rows").innerHTML=rows.map((r,i)=>`<div class="rw"><input data-k="n" data-i="${i}" value="${esc(r.n)}" aria-label="영역명"><input type="number" inputmode="decimal" min="0" max="${max}" step="any" data-k="a" data-i="${i}" value="${r.a??""}" aria-label="${esc(r.n)} 사전 점수"><input type="number" inputmode="decimal" min="0" max="${max}" step="any" data-k="b" data-i="${i}" value="${r.b??""}" aria-label="${esc(r.n)} 사후 점수"><button data-del="${i}" aria-label="영역 삭제"${rows.length<=3?" disabled":""}>✕</button></div>`).join("");
+ $("#add").disabled=rows.length>=8;
+ document.querySelectorAll("#scale button").forEach(b=>b.classList.toggle("on",+b.dataset.s===max));
+}
+function all(){drawRows();upd()}
+async function save(){
+ const m=$("#sm");
+ try{
+  const img=new Image(),svg=chart(true).replace('width="600" height="540"','width="1200" height="1080"');
+  await new Promise((ok,no)=>{img.onload=ok;img.onerror=no;img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg)});
+  const c=document.createElement("canvas");c.width=1200;c.height=1080;c.getContext("2d").drawImage(img,0,0,1200,1080);
+  const blob=await new Promise(r=>c.toBlob(r,"image/png"));
+  await DL.save({filename:"radar-chart.png",data:blob});m.textContent="저장했어요.";
+ }catch(e){m.textContent=e&&e.code==="declined"?"저장을 취소했어요.":"저장하지 못했어요. 다시 눌러 주세요."}
+}
+document.addEventListener("input",e=>{
+ const t=e.target,i=t.dataset.i;if(i===undefined)return;
+ t.dataset.k==="n"?rows[i].n=t.value:rows[i][t.dataset.k]=num(t.value);upd();
+});
+document.addEventListener("change",e=>{const t=e.target,k=t.dataset.k;if(k&&k!=="n"){const v=rows[t.dataset.i][k];t.value=v==null?"":v}});
+document.addEventListener("click",e=>{
+ const b=e.target.closest("button");if(!b)return;
+ if(b.dataset.s){const ns=+b.dataset.s,f=ns/max;rows.forEach(r=>["a","b"].forEach(k=>{if(r[k]!=null)r[k]=Math.round(r[k]*f*10)/10}));max=ns;all()}
+ else if(b.dataset.del!==undefined){rows.splice(+b.dataset.del,1);all()}
+ else if(b.id==="add"){rows.push({n:"새 영역 "+(rows.length+1),a:null,b:null});all()}
+ else if(b.id==="ex"){max=100;rows=SAMPLE.map(([n,a,c])=>({n,a,b:c}));all()}
+ else if(b.id==="rs"){
+  if(!armed){armed=1;b.textContent="한 번 더 누르면 점수가 지워져요";setTimeout(()=>{armed=0;b.textContent="점수 초기화"},3000)}
+  else{armed=0;b.textContent="점수 초기화";rows.forEach(r=>{r.a=null;r.b=null});all()}
+ }
+ else if(b.id==="sv")save();
+});
+matchMedia("(prefers-color-scheme:dark)").addEventListener("change",upd);
+if(window.claude&&claude.use)claude.use("downloads").then(d=>{DL=d;$("#sv").hidden=!d}).catch(()=>{});
+all();
+</script>
+</body>
+</html>
