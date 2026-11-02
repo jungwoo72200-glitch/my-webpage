@@ -1,137 +1,202 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>조선 시대 연표</title>
-<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
-<style>
-:root{--bg:#eef3ef;--card:#fff;--tx:#1b2b2a;--mut:#587070;--axis:#8aa7a2;--pri:#1f6f6a;--priTx:#fff;--red:#c43d2f;--bd:#c9d9d4;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1a1c;--card:#172629;--tx:#e8f1ef;--mut:#9db5b1;--axis:#4b6764;--pri:#5cc1b8;--priTx:#08201c;--red:#ff7a6b;--bd:#2c4442}}
-:root[data-theme="dark"]{--bg:#0f1a1c;--card:#172629;--tx:#e8f1ef;--mut:#9db5b1;--axis:#4b6764;--pri:#5cc1b8;--priTx:#08201c;--red:#ff7a6b;--bd:#2c4442}
-html{scroll-padding-top:env(safe-area-inset-top,0px)}
-html,body{margin:0;background:var(--bg);color:var(--tx);font-family:"Gowun Batang","Noto Serif KR","Apple SD Gothic Neo","Malgun Gothic",serif;font-size:18px;line-height:1.55}
-body.open{padding-bottom:340px}
-main{max-width:760px;margin:0 auto;padding:14px 14px 30px}
-h1{font-size:28px;margin:4px 0}p{margin:0 0 8px}.mut{color:var(--mut)}
-button{font:inherit;color:inherit;cursor:pointer}
-button:focus-visible{outline:3px solid var(--red);outline-offset:2px}
-.ctl{display:flex;flex-wrap:wrap;gap:8px 14px;margin:10px 0 12px}
-.seg{display:inline-flex;border:2px solid var(--bd);border-radius:12px;overflow:hidden}
-.seg button{border:0;background:var(--card);padding:8px 12px;min-height:44px;font-size:16px}
-.seg button.on{background:var(--pri);color:var(--priTx)}
-#tl{position:relative;background:var(--card);border:2px solid var(--bd);border-radius:18px;overflow:auto}
-#tl.h{overflow-y:hidden}#tl.v{height:44vh;min-height:320px}
-#trk{position:relative}
-.axis{position:absolute;background:var(--axis);border-radius:2px}
-.h .axis{left:0;right:0;top:50%;height:4px;margin-top:-2px}.v .axis{top:0;bottom:0;left:50%;width:4px;margin-left:-2px}
-.tick{position:absolute;color:var(--mut);font-size:13px;border:0 dashed var(--bd)}
-.h .tick{top:0;bottom:0;border-left-width:1px;padding:0 0 4px 4px;display:flex;align-items:flex-end}
-.v .tick{left:0;right:0;border-top-width:1px;padding:2px 0 0 4px}
-.gap{position:absolute;background:var(--card);color:var(--pri);font-size:14px;padding:0 6px;border-radius:8px;transform:translate(-50%,-50%);white-space:nowrap}
-.h .gap{top:50%}.v .gap{left:50%}
-.ev{position:absolute;width:26px;height:26px;padding:0;border-radius:50%;background:var(--card);border:4px solid var(--pri);transform:translate(-50%,-50%);z-index:2;transition:background .3s,box-shadow .3s,border-color .3s}
-.h .ev{top:50%}.v .ev{left:50%}
-.ev .st{position:absolute;background:var(--axis);transition:background .3s}
-.ev .cd{position:absolute;width:130px;box-sizing:border-box;padding:6px 8px;background:var(--card);border:2px solid var(--axis);border-radius:12px;font-size:16px;line-height:1.3;text-align:center;transition:border-color .3s,box-shadow .3s}
-.v .ev .cd{width:124px}
-.cd b{display:block;color:var(--pri);font-size:15px}
-.h .a .st{left:50%;bottom:100%;width:2px;height:var(--s);margin-left:-1px}.h .a .cd{left:50%;bottom:calc(100% + var(--s));transform:translateX(-50%)}
-.h .b .st{left:50%;top:100%;width:2px;height:var(--s);margin-left:-1px}.h .b .cd{left:50%;top:calc(100% + var(--s));transform:translateX(-50%)}
-.v .a .st{top:50%;right:100%;height:2px;width:var(--s);margin-top:-1px}.v .a .cd{right:calc(100% + var(--s));top:50%;transform:translateY(-50%)}
-.v .b .st{top:50%;left:100%;height:2px;width:var(--s);margin-top:-1px}.v .b .cd{left:calc(100% + var(--s));top:50%;transform:translateY(-50%)}
-.ev.sel{background:var(--red);border-color:var(--red);box-shadow:0 0 0 7px color-mix(in srgb,var(--red) 28%,transparent);z-index:4}
-.ev.sel .st{background:var(--red)}.ev.sel .cd{border-color:var(--red);box-shadow:0 3px 12px color-mix(in srgb,var(--red) 35%,transparent)}.ev.sel .cd b{color:var(--red)}
-.sheet{position:fixed;left:0;right:0;bottom:0;max-width:760px;margin:0 auto;max-height:42vh;overflow:auto;background:var(--card);border:2px solid var(--bd);border-bottom:0;border-radius:22px 22px 0 0;padding:14px 18px calc(14px + env(safe-area-inset-bottom,0px));box-shadow:0 -6px 24px rgba(0,0,0,.18);z-index:10}
-.sheet[hidden]{display:none}
-.yr{color:var(--red);font-size:20px;font-weight:700}.sheet h2{margin:0 0 6px;font-size:26px}
-.w{background:var(--bg);border-radius:10px;padding:6px 10px;font-size:16px}
-.gp{color:var(--mut);font-size:16px}
-.nav{display:flex;gap:10px}.nav button{flex:1;min-height:48px;border:2px solid var(--bd);background:var(--card);border-radius:12px}
-.nav button:disabled{opacity:.4;cursor:default}
-#x{position:absolute;top:8px;right:10px;width:44px;height:44px;border:0;background:none;font-size:22px}
-@media (prefers-reduced-motion:reduce){.ev,.ev .st,.ev .cd{transition:none}}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="바이브코딩과 다양한 AI 도구를 좋아하는 한정우의 개인 홈페이지">
+  <title>한정우 | 개인 홈페이지</title>
+  <style>
+    :root {
+      --bg: #f7f7fb; --paper: #fff; --ink: #25243a; --muted: #68677b;
+      --accent: #7057c8; --accent-light: #eee9ff; --line: #e8e6f0;
+      --mint: #e8f6f0; --shadow: 0 18px 50px rgba(45,36,83,.07);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; color: var(--ink); background: var(--bg); font-family: -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans KR",sans-serif; line-height: 1.7; }
+    a { color: inherit; }
+    .container { width: min(980px, calc(100% - 36px)); margin: 0 auto; }
+    .topbar { padding: 22px 0; }
+    .nav { display: flex; justify-content: space-between; align-items: center; gap: 18px; }
+    .logo { font-size: .95rem; font-weight: 850; letter-spacing: .06em; text-decoration: none; }
+    .nav-links { display: flex; gap: 22px; flex-wrap: wrap; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: .9rem; }
+    .nav-links a:hover,.nav-links a:focus-visible { color: var(--accent); }
+    .hero { position: relative; overflow: hidden; padding: clamp(30px,7vw,70px); border: 1px solid #e9e3ff; border-radius: 28px; background: linear-gradient(125deg,#f0ecff 0%,#fff 65%,#f0faf5 100%); box-shadow: var(--shadow); }
+    .hero:after { content: "✦"; position: absolute; right: 8%; top: 12%; color: #d9d0ff; font-size: clamp(4rem,10vw,8rem); line-height: 1; pointer-events: none; }
+    .eyebrow { position: relative; z-index: 1; color: var(--accent); font-size: .78rem; font-weight: 800; letter-spacing: .18em; }
+    h1 { position: relative; z-index: 1; margin: 13px 0 18px; font-size: clamp(2.4rem,7vw,4.3rem); line-height: 1.16; letter-spacing: -.06em; }
+    .intro { position: relative; z-index: 1; max-width: 620px; margin: 0; color: #59576d; font-size: clamp(1rem,2.4vw,1.13rem); }
+    .pills { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; }
+    .pill { padding: 6px 12px; border-radius: 999px; background: var(--accent-light); color: #5c45b0; font-size: .83rem; font-weight: 700; }
+    main { padding: 34px 0 56px; }
+    section { margin-top: 34px; scroll-margin-top: 20px; }
+    .section-title { margin: 0 0 4px; font-size: 1.4rem; letter-spacing: -.035em; }
+    .section-desc { margin: 0 0 17px; color: var(--muted); font-size: .93rem; }
+    .card { padding: 24px; border: 1px solid var(--line); border-radius: 20px; background: var(--paper); }
+    .about-text { margin: 0; color: #555469; }
+    .grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 15px; }
+    .interest-card { min-height: 170px; }
+    .icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; background: var(--accent-light); font-size: 1.3rem; }
+    .interest-card:nth-child(2) .icon { background: var(--mint); }
+    .card h3 { margin: 12px 0 5px; font-size: 1.03rem; }
+    .card p { color: var(--muted); margin: 0; font-size: .93rem; }
+    .activity-list { display: grid; gap: 12px; }
+    .activity { display: flex; align-items: flex-start; gap: 13px; }
+    .dot { flex: 0 0 9px; height: 9px; margin-top: 9px; border-radius: 50%; background: var(--accent); }
+    .activity strong { display: block; margin-bottom: 2px; }
+    .activity span { display: block; color: var(--muted); font-size: .92rem; }
+    
+    /* 프로젝트 영역 스타일 */
+    .project-list { display: grid; gap: 18px; }
+    .project { display: flex; gap: 16px; align-items: flex-start; }
+    .project .icon { flex-shrink: 0; }
+    .project h3 { margin: 0 0 6px; }
+    .tag { display: inline-block; margin-top: 12px; padding: 4px 10px; border-radius: 999px; background: #f1eef9; color: #685696; font-size: .78rem; font-weight: 700; }
+    .project-link { display: inline-flex; align-items: center; gap: 7px; margin-top: 14px; padding: 9px 13px; border-radius: 10px; background: var(--accent); color: #fff; font-size: .88rem; font-weight: 750; text-decoration: none; }
+    .project-link:hover,.project-link:focus-visible { background: #5b43b0; }
+    
+    .contact-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .email { font-weight: 750; color: var(--accent); overflow-wrap: anywhere; }
+    .email-note { margin-top: 10px !important; font-size: .82rem !important; }
+    footer { padding: 23px 0 30px; color: #8b899b; text-align: center; font-size: .82rem; }
+    @media (max-width: 620px) {
+      .container { width: calc(100% - 24px); }
+      .topbar { padding: 16px 0; }
+      .nav { align-items: flex-start; flex-direction: column; }
+      .nav-links { gap: 14px; }
+      .hero { border-radius: 22px; padding: 30px 22px; }
+      .hero:after { right: 5%; top: 8%; opacity: .65; }
+      .grid { grid-template-columns: 1fr; }
+      .card { padding: 20px; }
+    }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  </style>
 </head>
 <body>
-<main>
-<h1>🏯 조선 시대 연표</h1>
-<p class="mut">점이나 사건 이름을 눌러서 무슨 일이 있었는지 알아봐요. 점과 점 사이가 멀수록 시간이 더 많이 흐른 거예요.</p>
-<div class="ctl">
- <div class="seg" data-g="dir" role="group" aria-label="방향"><button data-v="h">가로</button><button data-v="v">세로</button></div>
- <div class="seg" data-g="gap" role="group" aria-label="간격"><button data-v="1">흐른 시간대로</button><button data-v="0">같은 간격으로</button></div>
- <div class="seg" data-g="cnt" role="group" aria-label="사건 수"><button data-v="1">사건 10개</button><button data-v="0">핵심 6개</button></div>
-</div>
-<div id="tl"></div>
-</main>
-<div class="sheet" id="sheet" role="dialog" aria-labelledby="pt" hidden>
- <button id="x" aria-label="닫기">✕</button>
- <div class="yr" id="py"></div><h2 id="pt"></h2><p id="pd"></p><p class="w" id="pw"></p><p class="gp" id="pg"></p>
- <div class="nav"><button id="pv">◀ 앞 사건</button><button id="nx">다음 사건 ▶</button></div>
-</div>
-<script>
-// c:1 이면 "핵심 6개" 보기에도 나옵니다. 같은 해 사건이 여러 개여도 아래 배치 규칙이 알아서 나눠 줍니다.
-const EV=[
-{y:1392,t:"조선 건국",c:1,d:"이성계 장군이 고려를 대신해 새 나라 조선을 세웠어요. 이후 도읍을 한양(지금의 서울)으로 정했어요.",w:"도읍: 나라의 중심이 되는 도시"},
-{y:1418,t:"세종대왕 즉위",c:1,d:"세종이 조선의 네 번째 임금이 되었어요. 백성을 아끼고 과학과 문화를 크게 발전시켰어요.",w:"즉위: 임금 자리에 오르는 것"},
-{y:1443,t:"한글 창제",c:1,d:"세종대왕과 학자들이 우리 글자 훈민정음(한글)을 만들었어요. 누구나 쉽게 배워 쓸 수 있는 글자예요.",w:"훈민정음: ‘백성을 가르치는 바른 소리’라는 뜻"},
-{y:1592,t:"임진왜란",c:1,d:"일본이 조선에 쳐들어와 7년 동안 전쟁이 이어졌어요. 이순신 장군과 의병이 나라를 지켜 냈어요.",w:"의병: 나라를 지키려고 스스로 일어난 백성"},
-{y:1636,t:"병자호란",c:1,d:"청나라가 조선에 쳐들어왔어요. 인조 임금은 남한산성에서 버텼지만 끝내 항복했어요.",w:"항복: 싸움에서 졌다고 인정하는 것"},
-{y:1724,t:"영조의 탕평책",c:0,d:"영조 임금은 신하들이 편을 갈라 싸우지 않도록, 고르게 인재를 뽑으려고 했어요.",w:"탕평: 한쪽으로 치우치지 않고 고르다는 뜻"},
-{y:1794,t:"수원 화성 축조",c:0,d:"정조 임금이 수원에 튼튼한 화성을 짓기 시작했어요. 정약용이 만든 거중기가 공사를 도왔어요.",w:"거중기: 무거운 돌을 쉽게 들어 올리는 기계"},
-{y:1866,t:"병인양요",c:0,d:"프랑스 군대가 강화도에 쳐들어왔어요. 우리 군이 맞서 싸워 물리쳤어요.",w:"양요: 서양 나라와 벌인 싸움"},
-{y:1894,t:"동학농민운동",c:0,d:"관리들의 지나친 세금과 횡포에 맞서 농민들이 일어났어요. 전봉준이 농민들을 이끌었어요.",w:"동학: 사람을 하늘처럼 귀하게 여기는 가르침"},
-{y:1897,t:"대한제국 선포",c:1,d:"고종이 나라 이름을 대한제국으로 바꾸고 황제가 되었어요. 스스로 힘을 키우는 독립된 나라임을 알렸어요.",w:"황제: 한 나라를 대표하는 가장 높은 임금"}
-];
-EV.forEach((e,i)=>e.id=i);
-const NOW=2026,$=s=>document.querySelector(s),rm=matchMedia("(prefers-reduced-motion:reduce)").matches;
-let H=innerWidth<640?"v":"h",prop=true,all=true,list=[],P=[],selId=-1,si=-1;
+  <header class="topbar">
+    <nav class="container nav" aria-label="주요 메뉴">
+      <a class="logo" href="#home">HAN JUNGWOO</a>
+      <div class="nav-links">
+        <a href="#about">소개</a><a href="#interests">관심사</a><a href="#activities">주요 활동</a><a href="#projects">프로젝트</a><a href="#contact">연락처</a>
+      </div>
+    </nav>
+  </header>
 
-function build(){
- list=EV.filter(e=>all||e.c);
- const h=H==="h",ppy=h?5:4,PAD=h?80:70,eq=h?170:120,cw=h?136:70,cs=h?76:126,s0=h?24:20,step=cs+10;
- // ① 간격: 연도 차이에 비례해 위치를 정합니다 (가로 5px, 세로 4px = 1년)
- P=list.map((e,i)=>PAD+(prop?(e.y-list[0].y)*ppy:i*eq));
- const L=P[P.length-1]+PAD,last={a:[],b:[]},pl=[];let ml=0;
- // ② 겹침: 위/아래(세로는 왼/오른쪽)를 번갈아 놓고, 자리가 모자라면 줄기를 더 길게 해서 바깥 줄에 놓습니다
- list.forEach((e,i)=>{
-  const o=i%2?["b","a"]:["a","b"];let g=null;
-  for(let l=0;l<4&&!g;l++)for(const s of o)if(last[s][l]===undefined||P[i]-last[s][l]>=cw){g=[s,l];break}
-  g=g||[o[0],3];last[g[0]][g[1]]=P[i];ml=Math.max(ml,g[1]);pl.push(g);
- });
- const C=Math.max(2*(s0+ml*step+cs)+30,h?300:0),pos=h?"left":"top";let x='<div class="axis"></div>';
- if(prop)for(let y=Math.ceil(list[0].y/100)*100;y<=list[list.length-1].y;y+=100)x+=`<div class="tick" style="${pos}:${PAD+(y-list[0].y)*ppy}px">${y}년</div>`;
- if(prop)for(let i=0;i<list.length-1;i++)if(P[i+1]-P[i]>=(h?70:46))x+=`<span class="gap" style="${pos}:${(P[i]+P[i+1])/2}px">${list[i+1].y-list[i].y}년</span>`;
- list.forEach((e,i)=>x+=`<button class="ev ${pl[i][0]}" data-i="${i}" style="${pos}:${P[i]}px;--s:${s0+pl[i][1]*step}px" aria-label="${e.y}년 ${e.t}"><i class="st"></i><span class="cd"><b>${e.y}년</b>${e.t}</span></button>`);
- const tl=$("#tl");tl.className=H;
- tl.innerHTML=`<div id="trk" style="${h?`width:${L}px;height:${C}px`:`height:${L}px;width:${C}px;min-width:100%`}">${x}</div>`;
- document.querySelectorAll(".seg").forEach(s=>{const v={dir:H,gap:prop?"1":"0",cnt:all?"1":"0"}[s.dataset.g];s.querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.v===v))});
- si=list.findIndex(e=>e.id===selId);
- if(si<0){selId=-1;close()}else{mark();center(si,true)}
-}
-function mark(){document.querySelectorAll(".ev").forEach(b=>b.classList.toggle("sel",+b.dataset.i===si))}
-function center(i,now){
- const c=$("#tl"),b=now||rm?"auto":"smooth";
- H==="h"?c.scrollTo({left:P[i]-c.clientWidth/2,behavior:b}):c.scrollTo({top:P[i]-c.clientHeight*.35,behavior:b});
-}
-function pick(i){
- if(i<0||i>=list.length)return;si=i;const e=list[i];selId=e.id;mark();center(i);
- $("#py").textContent=e.y+"년 · 지금부터 약 "+(NOW-e.y)+"년 전";$("#pt").textContent=e.t;$("#pd").textContent=e.d;$("#pw").textContent="📖 "+e.w;
- $("#pg").textContent=i?`앞 사건(${list[i-1].t})에서 ${e.y-list[i-1].y}년 뒤에 일어났어요.`:"연표에서 가장 먼저 일어난 사건이에요.";
- $("#pv").disabled=!i;$("#nx").disabled=i===list.length-1;
- $("#sheet").hidden=false;document.body.classList.add("open");
-}
-function close(){$("#sheet").hidden=true;document.body.classList.remove("open")}
-document.addEventListener("click",e=>{
- const b=e.target.closest("button");if(!b)return;
- if(b.classList.contains("ev"))pick(+b.dataset.i);
- else if(b.parentElement.classList.contains("seg")){const g=b.parentElement.dataset.g,v=b.dataset.v;if(g==="dir")H=v;if(g==="gap")prop=v==="1";if(g==="cnt")all=v==="1";build()}
- else if(b.id==="x")close();
- else if(b.id==="pv")pick(si-1);
- else if(b.id==="nx")pick(si+1);
-});
-document.addEventListener("keydown",e=>{if(e.key==="Escape")close()});
-build();
-</script>
+  <div class="container" id="home">
+    <section class="hero" aria-labelledby="main-heading">
+      <div class="eyebrow">PERSONAL WEBSITE · 2026</div>
+      <h1 id="main-heading">안녕하세요,<br>한정우입니다.</h1>
+      <p class="intro">바이브코딩을 좋아하는 한정우입니다. 다양한 AI 도구를 활용해 아이디어를 구체화하고, 직접 만들어 보는 과정에 관심이 있습니다.</p>
+      <div class="pills" aria-label="관심 분야"><span class="pill">바이브코딩</span><span class="pill">AI 도구</span><span class="pill">웹 프로젝트</span></div>
+    </section>
+  </div>
+
+  <main class="container">
+    <section id="about">
+      <h2 class="section-title">저를 소개합니다</h2>
+      <p class="section-desc">방문자가 가장 먼저 알아야 할 기본 정보입니다.</p>
+      <div class="card"><p class="about-text">안녕하세요 바이브코딩을 좋아하는 한정우입니다. 새로운 AI 도구를 살펴보고, 이를 활용해 필요한 것을 직접 만들어 보는 데 흥미가 있습니다.</p></div>
+    </section>
+
+    <section id="interests">
+      <h2 class="section-title">관심사</h2><p class="section-desc">평소 관심을 가지고 탐색하는 분야입니다.</p>
+      <div class="grid">
+        <article class="card interest-card"><div class="icon" aria-hidden="true">⌘</div><h3>바이브코딩</h3><p>AI와 함께 아이디어를 구체화하고 웹사이트나 작은 서비스를 만들어 보는 것을 좋아합니다.</p></article>
+        <article class="card interest-card"><div class="icon" aria-hidden="true">✦</div><h3>여러 가지 AI 툴</h3><p>다양한 AI 도구의 기능을 알아보고 공부와 프로젝트에 활용할 방법을 찾아봅니다.</p></article>
+      </div>
+    </section>
+
+    <section id="activities">
+      <h2 class="section-title">주요 활동</h2><p class="section-desc">현재까지 제공된 학력 및 학업 정보를 정리했습니다.</p>
+      <div class="card activity-list">
+        <div class="activity"><span class="dot" aria-hidden="true"></span><div><strong>대학교 수업 이수 중</strong><span>약 70학점의 수업을 이수하고 있습니다.</span></div></div>
+        <div class="activity"><span class="dot" aria-hidden="true"></span><div><strong>고등학교 졸업</strong><span>고등학교 과정을 졸업했습니다.</span></div></div>
+      </div>
+    </section>
+
+    <!-- 프로젝트 섹션 (총 6개 프로젝트 완벽 연동) -->
+    <section id="projects">
+      <h2 class="section-title">개별 프로젝트</h2>
+      <p class="section-desc">직접 기획하거나 제작한 프로젝트를 소개합니다.</p>
+      
+      <div class="project-list">
+        <!-- 1. 오늘의 할 일 관리 앱 -->
+        <article class="card project">
+          <div class="icon" aria-hidden="true">✓</div>
+          <div>
+            <h3>오늘의 할 일 관리 앱</h3>
+            <p>오늘 해야 할 일을 기록하고 완료 여부를 확인해 하루의 할 일을 정리하는 웹 애플리케이션 프로젝트입니다.</p>
+            <span class="tag">개인 프로젝트</span><br>
+            <a class="project-link" href="./%EC%98%A4%EB%8A%98%EC%9D%98%20%ED%95%A0%20%EC%9D%BC%20(1).html" target="_blank">프로젝트 열기 ↗</a>
+          </div>
+        </article>
+
+        <!-- 2. KDC 한국십진분류법 주류 연결하기 게임 -->
+        <article class="card project">
+          <div class="icon" aria-hidden="true">📚</div>
+          <div>
+            <h3>KDC 한국십진분류법 주류 연결하기 게임</h3>
+            <p>초등학생 및 저학년 학생들의 집중력을 높이고 즐겁게 학습할 수 있는 2D 카드 뒤집기 교육용 디지털 교구입니다. 000(총류)부터 900(역사)까지의 분류 기호와 주제를 짝지어 매칭합니다.</p>
+            <span class="tag">교육용 디지털 교구</span><br>
+            <a class="project-link" href="./gemini-code-1793601846112.html" target="_blank">게임 플레이하기 ↗</a>
+          </div>
+        </article>
+
+        <!-- 3. 디지털 도장 및 사인 생성기 -->
+        <article class="card project">
+          <div class="icon" aria-hidden="true">🏷️</div>
+          <div>
+            <h3>디지털 도장 및 사인 생성기</h3>
+            <p>온라인 교육 활동이나 서류에 활용할 수 있는 도장 생성기입니다. 이름 기반의 전통 도장, 학급 칭찬 스티커 로고, 그리고 캔버스 터치 서명 패드를 제공하여 투명 PNG로 즉시 다운로드할 수 있습니다.</p>
+            <span class="tag">웹 유틸리티 도구</span><br>
+            <a class="project-link" href="./code_artifact.html" target="_blank">도장 만들기 ↗</a>
+          </div>
+        </article>
+
+        <!-- 4. 객관식 퀴즈 (독도의 날 · 독서) -->
+        <article class="card project">
+          <div class="icon" aria-hidden="true">🎯</div>
+          <div>
+            <h3>객관식 퀴즈 (독도의 날 · 독서)</h3>
+            <p>독도의 역사와 지리, 그리고 독서와 관련된 10문제를 풀어보며 즐겁게 배울 수 있는 대화형 퀴즈 웹 애플리케이션입니다. 효과음과 함께 정답 여부를 직관적으로 확인할 수 있습니다.</p>
+            <span class="tag">교육용 인터랙티브 퀴즈</span><br>
+            <a class="project-link" href="./%EA%B0%9D%EA%B4%80%EC%8B%9D%20%ED%80%B4%EC%A6%88%20(%EB%8F%85%EB%8F%84%EC%9D%98%20%EB%82%A0%20%C2%B7%20%EB%8F%85%EC%84%9C).html" target="_blank">퀴즈 풀러 가기 ↗</a>
+          </div>
+        </article>
+
+        <!-- 5. 도형 돌려 보기 (회전·뒤집기 학습 도구) -->
+        <article class="card project">
+          <div class="icon" aria-hidden="true">📐</div>
+          <div>
+            <h3>도형 돌려 보기 (회전·뒤집기 학습 도구)</h3>
+            <p>다양한 다각형을 시계/반시계 방향으로 돌리거나 상하/좌우로 뒤집어 보며 공간지각력을 기를 수 있는 수학 교구입니다. 연습 모드와 목표 모양을 맞추는 퀴즈 모드를 지원합니다.</p>
+            <span class="tag">수학 디지털 교구</span><br>
+            <a class="project-link" href="./%EB%8F%84%ED%98%95%20%EB%8F%8C%EB%A0%A4%20%EB%B3%B4%EA%B8%B0%20(%ED%9A%8C%EC%A0%84%C2%B7%EB%92%A4%EC%A7%91%EA%B8%B0%20%ED%95%99%EC%8A%B5%20%EB%8F%84%EA%B5%AC).html" target="_blank">도형 조작하기 ↗</a>
+          </div>
+        </article>
+
+        <!-- 6. 조선 시대 인터랙티브 연표 -->
+        <article class="card project">
+          <div class="icon" aria-hidden="true">🏯</div>
+          <div>
+            <h3>조선 시대 인터랙티브 연표</h3>
+            <p>조선 건국부터 대한제국 선포까지의 주요 역사적 사건을 가로/세로 방향과 실제 시간 간격 비례로 탐색할 수 있는 반응형 역사 연표 교구입니다. 상세 해설 및 어휘 카드를 제공합니다.</p>
+            <span class="tag">역사 디지털 교구</span><br>
+            <a class="project-link" href="./%EC%A1%B0%EC%84%A0%20%EC%8B%9C%EB%8C%80%20%EC%9D%B8%ED%84%B0%EB%9E%99%ED%8B%B0%EB%B8%8C%20%EC%97%B0%ED%91%9C.html" target="_blank">연표 둘러보기 ↗</a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="contact">
+      <h2 class="section-title">연락처</h2><p class="section-desc">이메일로 연락할 수 있습니다.</p>
+      <div class="card">
+        <div class="contact-row"><div><h3 style="margin:0 0 4px;">이메일</h3><p>연락처 정보</p></div><span class="email">hou7220@naver.com</span></div>
+        <p class="email-note">궁금한 점이나 협업 관련 문의는 위 이메일로 보내주세요.</p>
+      </div>
+    </section>
+  </main>
+  <footer class="container">© 2026 한정우 · 개인 홈페이지</footer>
 </body>
 </html>
