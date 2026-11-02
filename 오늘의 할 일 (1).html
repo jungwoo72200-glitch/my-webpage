@@ -69,6 +69,54 @@ h1 {
   letter-spacing: -0.5px;
 }
 
+/* 프로젝트 바로가기 카드 섹션 */
+.project-links {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 480px) {
+  .project-links {
+    grid-template-columns: 1fr;
+  }
+}
+
+.project-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px 16px;
+  text-decoration: none;
+  color: var(--tx);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+  transition: all 0.2s ease;
+}
+
+.project-card:hover {
+  border-color: var(--pri);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px -2px rgba(79, 70, 229, 0.1);
+}
+
+.project-card .p-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--pri);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.project-card .p-desc {
+  font-size: 12px;
+  color: var(--sub);
+}
+
 .card {
   background: var(--card);
   border: 1px solid var(--line);
@@ -312,6 +360,18 @@ li.done .tx {
 <main>
   <h1>📝 오늘의 할 일</h1>
 
+  <!-- 실습 프로젝트 바로가기 링크 카드 -->
+  <div class="project-links">
+    <a href="game.html" target="_blank" class="project-card">
+      <span class="p-title">🎮 KDC 주류 맞추기 게임</span>
+      <span class="p-desc">한국십진분류법 카드 매칭 교구 학습</span>
+    </a>
+    <a href="stamp.html" target="_blank" class="project-card">
+      <span class="p-title">🏷️ 디지털 도장 & 서명 생성기</span>
+      <span class="p-desc">도장, 학급 스티커, 커스텀 서명 제작</span>
+    </a>
+  </div>
+
   <div class="card">
     <div class="datebar">
       <button class="btn" id="prev" aria-label="전날">◀</button>
@@ -391,7 +451,6 @@ function render() {
   const days = ['일', '월', '화', '수', '목', '금', '토'];
   const isToday = cur === ymd(new Date());
   
-  $('titleDOCTYPE').textContent = '';
   $('title').textContent = d.getFullYear() + '년 ' + (d.getMonth() + 1) + '월 ' + d.getDate() + '일 (' + days[d.getDay()] + ')' + (isToday ? ' · 오늘' : '');
   $('pick').value = cur;
 
