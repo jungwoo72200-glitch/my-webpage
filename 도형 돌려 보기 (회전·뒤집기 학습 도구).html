@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>도형 돌려 보기</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fbfaf4;--grid:#e6ead9;--card:#fff;--tx:#1f2a37;--mut:#5f6b7a;--pri:#0f7a6e;--priTx:#fff;--ok:#1b8a4d;--no:#c2410c;--bd:#cfd6c2;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14181d;--grid:#1e252d;--card:#1c232b;--tx:#eef1f4;--mut:#a3adb8;--pri:#4fd1be;--priTx:#08201c;--ok:#5ad08f;--no:#ff9b6b;--bd:#37424d}}
+:root[data-theme="dark"]{--bg:#14181d;--grid:#1e252d;--card:#1c232b;--tx:#eef1f4;--mut:#a3adb8;--pri:#4fd1be;--priTx:#08201c;--ok:#5ad08f;--no:#ff9b6b;--bd:#37424d}
+html,body{margin:0;color:var(--tx);font-family:"Jua","Apple SD Gothic Neo","Malgun Gothic",sans-serif;font-size:18px;line-height:1.5;background-color:var(--bg);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:28px 28px}
+main{max-width:720px;margin:0 auto;padding:16px 16px 40px}
+h1{font-size:28px;margin:4px 0}p{margin:0 0 8px}.mut{color:var(--mut)}
+button,select{font:inherit;color:inherit}
+button{cursor:pointer;border:2px solid var(--bd);background:var(--card);border-radius:14px;padding:10px 14px;min-height:52px}
+button:focus-visible,select:focus-visible{outline:3px solid var(--pri);outline-offset:2px}
+.tabs{display:flex;gap:8px;margin:10px 0 14px}.tabs button{flex:1}
+.on{background:var(--pri)!important;color:var(--priTx);border-color:var(--pri)}
+.panel{background:var(--card);border:2px solid var(--bd);border-radius:18px;padding:8px;text-align:center}
+.panel svg{width:100%;max-width:300px;height:auto;display:block;margin:0 auto}
+.panel.big svg{max-width:340px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0}
+.chip{min-height:44px;padding:6px 12px}
+.sw{width:44px;height:44px;min-height:0;padding:0;border-radius:50%;border:3px solid var(--card);box-shadow:0 0 0 2px var(--bd)}
+.sw.sel{box-shadow:0 0 0 4px var(--tx)}
+select{background:var(--card);border:2px solid var(--bd);border-radius:10px;padding:6px}
+.ctrl{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0 8px}
+.ctrl b{font-size:26px;font-weight:400;margin-right:6px;vertical-align:middle}
+.ghost{width:100%;margin-bottom:10px}
+.go{width:100%;background:var(--pri);color:var(--priTx);border-color:var(--pri);font-size:20px;margin-top:6px}
+.card{background:var(--card);border:2px solid var(--bd);border-radius:18px;padding:14px 16px}
+.msg{min-height:30px;font-size:20px;margin:10px 0}.msg.ok{color:var(--ok)}.msg.no{color:var(--no)}
+.score{font-size:60px;text-align:center}
+.top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
+.ax{stroke:var(--bd);stroke-width:2;stroke-dasharray:6 6}
+.gh{fill:none;stroke:var(--mut);stroke-width:2.5;stroke-dasharray:7 6}
+.sh{stroke:var(--tx);stroke-width:4;stroke-linejoin:round}
+.mv{transition:transform .35s ease}
+@media (prefers-reduced-motion:reduce){.mv{transition:none}}
+</style>
+</head>
+<body>
+<main>
+<h1>📐 도형 돌려 보기</h1>
+<p class="mut">돌리고 뒤집어 보면서 도형의 방향을 알아봐요.</p>
+<div class="tabs" id="tabs"><button data-m="p" class="on">연습 모드</button><button data-m="q">퀴즈 모드</button></div>
+<div id="app"></div>
+</main>
+<script>
+const reg=(n,r)=>Array.from({length:n},(_,k)=>{const t=(-90+360/n*k)*Math.PI/180;return[Math.round(r*Math.cos(t)),Math.round(r*Math.sin(t))]});
+// 첫 번째 꼭짓점 안쪽의 주황 점이 "방향 표시"입니다. 도형이 어느 쪽으로 움직였는지 볼 수 있어요.
+const SH={tri:["정삼각형",reg(3,95)],rtri:["직각삼각형",[[-40,-80],[-40,40],[80,40]]],sq:["정사각형",[[-65,-65],[65,-65],[65,65],[-65,65]]],rect:["직사각형",[[-90,-50],[90,-50],[90,50],[-90,50]]],pent:["정오각형",reg(5,90)],L:["L자 도형",[[-60,-80],[0,-80],[0,20],[60,20],[60,80],[-60,80]]]};
+const COL=["#4d9de0","#e15554","#3bb273","#e1bc29","#7768ae"];
+// 행렬 [m11,m12,m21,m22]: 화면에 보이는 모양을 기준으로 돌리기·뒤집기를 차례로 곱합니다.
+const I=[1,0,0,1],FH=[-1,0,0,1],FV=[1,0,0,-1];
+const rot=d=>{const t=d*Math.PI/180,c=Math.cos(t),s=Math.sin(t);return[c,-s,s,c]};
+const mul=(A,B)=>[A[0]*B[0]+A[1]*B[2],A[0]*B[1]+A[1]*B[3],A[2]*B[0]+A[3]*B[2],A[2]*B[1]+A[3]*B[3]];
+const rnd=M=>M.map(v=>Math.round(v*1e6)/1e6+0),same=(A,B)=>A.every((v,i)=>Math.abs(v-B[i])<.01);
+const det=M=>M[0]*M[3]-M[1]*M[2],tf=M=>`matrix(${M[0]},${M[2]},${M[1]},${M[3]},0,0)`,R=n=>Math.random()*n|0;
+const $=s=>document.querySelector(s),app=$("#app");
+let mode="p",sh="tri",col=COL[0],step=90,M=I,q={flip:false},first=true,done=false;
+
+function svg(k,c,id,ghost){
+ const p=SH[k][1],pts=p.map(v=>v.join(",")).join(" "),d=p[0];
+ return `<svg viewBox="-130 -130 260 260" role="img" aria-label="${SH[k][0]}"><line x1="-125" y1="0" x2="125" y2="0" class="ax"/><line x1="0" y1="-125" x2="0" y2="125" class="ax"/>${ghost?`<polygon points="${pts}" class="gh"/>`:""}<g class="mv" id="${id}"><polygon points="${pts}" fill="${c}" class="sh"/><circle cx="${d[0]*.6}" cy="${d[1]*.6}" r="9" fill="#ff8a1f" stroke="#fff" stroke-width="3"/></g></svg>`;
+}
+const ctrl=()=>`<div class="ctrl"><button data-op="cw"><b>↻</b>시계 방향 돌리기</button><button data-op="ccw"><b>↺</b>반시계 방향 돌리기</button><button data-op="fh"><b>⇆</b>좌우 뒤집기</button><button data-op="fv"><b>⇅</b>상하 뒤집기</button></div><button class="ghost" data-op="reset">처음 모양으로</button>`;
+
+function view(){
+ M=I;done=false;first=true;
+ if(mode==="p"){
+  app.innerHTML=`<div class="panel big">${svg(sh,col,"mv",1)}</div>
+  <div class="row">${Object.entries(SH).map(([k,v])=>`<button class="chip${k===sh?" on":""}" data-sh="${k}">${v[0]}</button>`).join("")}</div>
+  <div class="row">${COL.map(c=>`<button class="sw${c===col?" sel":""}" data-col="${c}" style="background:${c}" aria-label="색 바꾸기"></button>`).join("")}<label>한 번에 <select id="step">${[90,45,15].map(s=>`<option${s===step?" selected":""}>${s}</option>`).join("")}</select>°</label></div>
+  ${ctrl()}<div class="card" id="info"></div>`;
+ }else if(q.end){
+  const t=q.score>=5?"모두 맞혔어요! 🏆":q.score>=3?"잘했어요! 👏":"연습 모드에서 더 돌려 보고 다시 도전해요! 💪";
+  app.innerHTML=`<div class="card"><p class="mut" style="text-align:center">결과 (처음에 맞힌 문제)</p><div class="score">${q.score} / 5</div><p style="text-align:center">${t}</p><button class="go" data-m="q">다시 도전</button><button class="ghost" data-m="p" style="margin-top:10px">연습 모드로</button></div>`;
+ }else{
+  app.innerHTML=`<div class="top"><span>문제 ${q.i+1} / 5</span><label><input type="checkbox" id="fl"${q.flip?" checked":""}> 뒤집기 문제도 내기</label></div>
+  <div class="two"><div class="panel"><b>목표 모양</b>${svg(q.s,q.tc,"tg")}</div><div class="panel"><b>내 도형</b>${svg(q.s,q.uc,"mv")}</div></div>
+  ${ctrl()}<button class="go" id="chk">확인하기</button><div class="msg" id="msg" aria-live="polite"></div><div id="nx"></div>`;
+  $("#tg").style.transform=tf(q.T);
+ }
+ apply();
+}
+function apply(){
+ const g=$("#mv");if(g)g.style.transform=tf(M);
+ const f=$("#info");if(!f)return;
+ const a=(Math.round(Math.atan2(M[2],M[0])*180/Math.PI)+360)%360,n=SH[sh][1].length;
+ f.innerHTML=`<p><b>지금 모양:</b> ${det(M)<0?"거울에 비친 것처럼 뒤집힌 모양":a===0?"처음과 같은 방향":"시계 방향으로 "+a+"° 돌아간 모양"}</p><p class="mut">색이나 방향이 달라져도 변 ${n}개, 꼭짓점 ${n}개, 크기는 그대로예요. 점선은 처음 모양, 주황 점을 보면 어느 쪽이 움직였는지 알 수 있어요.</p>`;
+}
+function op(o){
+ const s=mode==="p"?step:90;
+ M=o==="reset"?I:rnd(mul({cw:rot(s),ccw:rot(-s),fh:FH,fv:FV}[o],M));apply();
+}
+function newQ(){
+ const ks=Object.keys(SH);q.s=ks[R(ks.length)];const ti=R(5);q.tc=COL[ti];q.uc=COL[(ti+2)%5];
+ const ops=[rot(90),rot(-90),rot(180)].concat(q.flip?[FH,FV]:[]);
+ do{let T=I;for(let i=1+R(3);i>0;i--)T=rnd(mul(ops[R(ops.length)],T));q.T=T}while(same(q.T,I));
+ view();
+}
+function startQ(){q={i:0,score:0,flip:q.flip,end:false};newQ()}
+function check(){
+ if(done)return;const m=$("#msg");
+ if(same(M,q.T)){
+  done=true;if(first)q.score++;m.className="msg ok";m.textContent="🎉 정답! 색이 달라도 모양과 방향이 같으면 같은 도형이에요.";
+  $("#nx").innerHTML=`<button class="go" id="next">${q.i<4?"다음 문제":"결과 보기"}</button>`;$("#next").focus();
+ }else{
+  first=false;m.className="msg no";
+  m.textContent=det(M)<0!==det(q.T)<0?"🤔 거울처럼 방향이 반대예요. 좌우나 상하 뒤집기를 써 보세요.":"🤔 아직 달라요. 주황 점이 어느 쪽에 있는지 비교하며 더 돌려 보세요.";
+ }
+}
+document.addEventListener("click",e=>{
+ const b=e.target.closest("button");if(!b)return;const d=b.dataset;
+ if(d.m){mode=d.m;document.querySelectorAll("#tabs button").forEach(x=>x.classList.toggle("on",x.dataset.m===mode));mode==="q"?startQ():view()}
+ else if(d.sh){sh=d.sh;view()}
+ else if(d.col){col=d.col;view()}
+ else if(d.op){if(!done)op(d.op)}
+ else if(b.id==="chk")check();
+ else if(b.id==="next"){q.i++;q.i<5?newQ():(q.end=true,view())}
+});
+document.addEventListener("change",e=>{
+ if(e.target.id==="step")step=+e.target.value;
+ if(e.target.id==="fl"){q.flip=e.target.checked;startQ()}
+});
+view();
+</script>
+</body>
+</html>
