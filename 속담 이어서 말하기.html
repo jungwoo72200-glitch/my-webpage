@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>속담 이어서 말하기</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eaf4f1;--card:#fff;--ink:#1f2a44;--muted:#5c6b80;--line:#b9d6cc;--cell:#f4faf8;--pri:#ffc83d;--pri-ink:#1f2a44;--ok:#1f8f5f;--bad:#d6393f;--accent:#2d7d6e;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14202b;--card:#1d2d3b;--ink:#eaf2f7;--muted:#9fb2c2;--line:#35505f;--cell:#162531;--pri:#ffc83d;--pri-ink:#1b2433;--ok:#5fd49c;--bad:#ff7b80;--accent:#62c4b0;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#14202b;--card:#1d2d3b;--ink:#eaf2f7;--muted:#9fb2c2;--line:#35505f;--cell:#162531;--pri:#ffc83d;--pri-ink:#1b2433;--ok:#5fd49c;--bad:#ff7b80;--accent:#62c4b0;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;line-height:1.5}
+.wrap{max-width:560px;margin:0 auto;padding:20px 16px 32px}
+.card{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:20px}
+h1,.jua,.btn,.stat b,.q,.cell,.fb{font-family:"Jua","Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;font-weight:400}
+h1{font-size:2.2rem;margin:0 0 8px;line-height:1.2}
+p{margin:0 0 14px}
+.muted{color:var(--muted);font-size:.95rem}
+.btn{font-size:1.2rem;border:0;border-radius:14px;padding:12px 18px;cursor:pointer;background:var(--pri);color:var(--pri-ink);box-shadow:0 4px 0 rgba(0,0,0,.22)}
+.btn:active{transform:translateY(2px);box-shadow:0 2px 0 rgba(0,0,0,.22)}
+.btn.sub{background:var(--cell);color:var(--ink);border:2px solid var(--line);box-shadow:none}
+.btn:disabled{opacity:.45;cursor:default}
+.btn.big{width:100%;font-size:1.5rem;padding:14px;margin-top:14px}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+input[type=range]{width:100%;accent-color:var(--accent);margin:8px 0 0}
+.scale{display:flex;justify-content:space-between;color:var(--muted);font-size:.85rem;margin-bottom:14px}
+label{font-size:1.1rem}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--card);border:2px solid var(--line);border-radius:14px;padding:8px;text-align:center}
+.stat b{display:block;font-size:1.7rem;line-height:1.3}
+.stat small{color:var(--muted)}
+.bar{height:10px;border-radius:6px;background:var(--line);overflow:hidden;margin:10px 0 16px}
+.bar i{display:block;height:100%;width:100%;background:var(--accent);transition:width .25s linear}
+.bar.low i{background:var(--bad)}
+.q{font-size:clamp(2rem,9vw,3rem);line-height:1.3;text-align:center;margin:6px 0 4px;word-break:keep-all}
+.cells{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 3px;min-height:56px;margin:12px 0;align-items:center}
+.cell{width:38px;height:44px;border:2px solid var(--accent);border-radius:4px;background:var(--cell);display:grid;place-items:center;font-size:1.4rem;color:var(--accent)}
+.cell.known{color:var(--ink)}
+.gap{width:12px}
+#ans{width:100%;font:inherit;font-size:1.4rem;padding:12px 14px;border-radius:14px;border:2px solid var(--line);background:var(--cell);color:var(--ink)}
+.fb{min-height:2.4em;text-align:center;font-size:1.3rem;margin:8px 0}
+.fb.ok{color:var(--ok)}.fb.bad{color:var(--bad)}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row .btn{flex:1}
+@keyframes sh{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.shake{animation:sh .3s}
+@media (prefers-reduced-motion:reduce){.shake{animation:none}.bar i{transition:none}}
+ul{padding-left:20px;margin:8px 0 0}
+#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:50}
+li{margin-bottom:4px}
+</style>
+</head>
+<body>
+<main class="wrap">
+
+<section id="s-start" class="card">
+  <h1>속담 이어서 말하기</h1>
+  <p>속담의 앞부분을 보고 뒷부분을 맞혀 보세요. 막히면 초성 힌트를 쓸 수 있어요. 힌트는 최대 2번이에요.</p>
+  <label for="lim">제한시간 <b id="tv">120</b>초</label>
+  <input id="lim" type="range" min="30" max="300" step="10" value="120">
+  <div class="scale"><span>30초</span><span>300초</span></div>
+  <p id="src" class="muted"></p>
+  <button class="btn sub" id="pick" type="button">속담 파일(CSV) 불러오기</button>
+  <input id="csv" type="file" accept=".csv,.txt,text/csv" hidden>
+  <p class="muted" style="margin:8px 0 0">CSV는 한 줄에 한 문제, ‘앞부분,뒷부분’ 형식이에요.</p>
+  <button class="btn big" id="go" type="button">게임 시작</button>
+</section>
+
+<section id="s-game" hidden>
+  <div class="stats">
+    <div class="stat"><small>점수</small><b id="sc">0</b></div>
+    <div class="stat"><small>맞힌 문제</small><b id="rt">0</b></div>
+    <div class="stat"><small>남은 시간</small><b id="tl">0초</b></div>
+  </div>
+  <div class="bar" id="bar"><i></i></div>
+  <div class="card">
+    <p class="q" id="q"></p>
+    <div class="cells" id="cells" aria-label="초성 힌트"></div>
+    <input id="ans" autocomplete="off" placeholder="나머지를 입력해요" aria-label="속담의 나머지 부분">
+    <div id="fb" class="fb" aria-live="polite"></div>
+    <div class="row">
+      <button class="btn sub" id="hint" type="button"></button>
+      <button class="btn" id="ok" type="button">확인</button>
+    </div>
+    <div class="row" style="margin-top:10px"><button class="btn sub" id="skip" type="button">모르겠어요 (넘기기)</button></div>
+  </div>
+</section>
+
+<section id="s-end" class="card" hidden>
+  <h1 id="e-msg">시간이 끝났어요!</h1>
+  <div class="stats" style="margin:12px 0">
+    <div class="stat"><small>점수</small><b id="e-sc">0</b></div>
+    <div class="stat"><small>맞힌 문제</small><b id="e-rt">0</b></div>
+    <div class="stat"><small>정답률</small><b id="e-ac">-</b></div>
+  </div>
+  <p class="jua" style="font-size:1.2rem;margin-bottom:0">다시 보면 좋은 속담</p>
+  <ul id="e-miss"></ul>
+  <div class="row" style="margin-top:16px">
+    <button class="btn sub" id="home" type="button">처음으로</button>
+    <button class="btn" id="again" type="button">다시 하기</button>
+  </div>
+</section>
+
+</main>
+<script>
+const DEF=`가까운 남이,먼 친척보다 낫다
+가난 구제는,나라님도 못한다
+가는 날이,장날이다
+가는 말이 고와야,오는 말이 곱다
+가랑비에,옷 젖는 줄 모른다
+가을에는,부지깽이도 덤빈다
+가재는,게 편
+가지 많은 나무에,바람 잘 날이 없다
+간에,기별도 안 가다
+간에 붙었다,쓸개에 붙었다 한다
+강 건너,불구경하듯 한다
+개도 닷새가 지나면,주인을 안다
+개천에서,용 난다
+고래 싸움에,새우 등 터진다
+고슴도치도,제 새끼는 예쁘다
+공든 탑이,무너지랴
+공짜보다,비싼 것은 없다
+구르는 돌은,이끼가 안 낀다
+국물도,없다
+그림의,떡
+금강산도,식후경
+기어이 걷기도 전에,뛰려고 한다
+길고 짧은 것은,대봐야 안다
+김칫국부터,마신다
+까마귀 날자,배 떨어진다
+꿈보다,해몽이 좋다
+낮말은 새가 듣고,밤말은 쥐가 듣는다
+누워서,침 뱉기
+늦었다고 생각할 때가,가장 빠른 때다
+달도,차면 기운다
+닭 잡아먹고,오리발 낸다
+도둑이,제 발 저리다
+돌다리도,두들겨 보고 건너라
+등잔 밑이,어둡다
+말 한마디로,천 냥 빚도 갚는다
+물에 빠지면,지푸라기라도 잡는다
+밑 빠진 독에,물 붓기
+백지장도 맞들면,낫다
+벼는 익을수록,고개를 숙인다
+사공이 많으면,배가 산으로 간다
+시작이,반이다
+아는 길도,물어가랬다
+아무리 바빠도,바늘 허리에 실 매어 쓸까
+약방의,감초
+열 길 물속은 알아도,한 길 사람 속은 모른다
+우물 안,개구리
+윗물이 맑아야,아랫물이 맑다
+자라 보고 놀란 가슴,솥뚜껑 보고 놀란다
+작은 고추가,맵다
+호랑이도 제 말하면,온다
+콩 심은 데,콩 나고 팥 심은 데 팥 난다
+가는 말이 고와야,오는 말이 곱다
+낮말은 새가 듣고,밤말은 쥐가 듣는다
+티끌 모아,태산
+고래 싸움에,새우 등 터진다
+백지장도 맞들면,낫다
+소 잃고,외양간 고친다
+세 살 버릇,여든까지 간다
+호랑이도 제 말 하면,온다
+아니 땐 굴뚝에,연기 나랴
+원숭이도 나무에서,떨어진다
+천 리 길도,한 걸음부터
+하늘이 무너져도,솟아날 구멍이 있다
+개구리 올챙이 적,생각 못 한다
+말 한마디로,천 냥 빚을 갚는다
+우물 안,개구리
+등잔 밑이,어둡다
+꿩 먹고,알 먹는다
+누워서,떡 먹기
+발 없는 말이,천 리 간다`.split("\n").map(l=>{const [f,b]=l.split(",");return {f,b}}).filter((x,i,a)=>a.findIndex(y=>y.f.replace(/\s/g,"")===x.f.replace(/\s/g,""))===i);
+
+const $=id=>document.getElementById(id);
+const CHO="ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ";
+const norm=s=>s.replace(/[^0-9A-Za-z가-힣]/g,"");
+const cho=c=>{const n=c.charCodeAt(0)-44032;if(n>=0&&n<11172)return CHO[Math.floor(n/588)];return /[0-9A-Za-z]/.test(c)?"○":c};
+const sh=a=>a.map(x=>[Math.random(),x]).sort((p,q)=>p[0]-q[0]).map(x=>x[1]);
+const show=id=>["s-start","s-game","s-end"].forEach(x=>{$(x).hidden=x!==id});
+let items=DEF.slice(),S={over:true};
+
+const cv=document.createElement("canvas");cv.id="fx";cv.setAttribute("aria-hidden","true");document.body.append(cv);
+const cx=cv.getContext("2d");let ps=[],raf=0;
+function fit(){const d=window.devicePixelRatio||1;cv.width=innerWidth*d;cv.height=innerHeight*d;cx.setTransform(d,0,0,d,0,0)}
+addEventListener("resize",fit);fit();
+const COL=["#ffc83d","#ff5d73","#4cc9f0","#7bd88f","#b388ff","#ff9f43"];
+function boom(x,y,n){
+  for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,v=4+Math.random()*9;
+    ps.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-3,w:6+Math.random()*6,h:4+Math.random()*5,r:Math.random()*6,vr:(Math.random()-.5)*.4,c:COL[i%COL.length],life:60+Math.random()*40,round:Math.random()<.3})}
+  if(!raf)raf=requestAnimationFrame(loop);
+}
+function loop(){
+  cx.clearRect(0,0,innerWidth,innerHeight);
+  ps=ps.filter(p=>p.life>0&&p.y<innerHeight+30);
+  for(const p of ps){
+    p.vx*=.98;p.vy=p.vy*.98+.25;p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;p.life--;
+    cx.save();cx.globalAlpha=Math.min(1,p.life/25);cx.translate(p.x,p.y);cx.rotate(p.r);cx.fillStyle=p.c;
+    if(p.round){cx.beginPath();cx.arc(0,0,p.w/2,0,7);cx.fill()}else cx.fillRect(-p.w/2,-p.h/2,p.w,p.h);
+    cx.restore();
+  }
+  raf=ps.length?requestAnimationFrame(loop):0;
+}
+function fireworks(){
+  if(window.matchMedia("(prefers-reduced-motion:reduce)").matches)return;
+  const W=innerWidth,H=innerHeight;
+  boom(W*.25,H*.4,50);
+  setTimeout(()=>boom(W*.75,H*.35,50),150);
+  setTimeout(()=>boom(W*.5,H*.3,60),320);
+}
+function srcMsg(t){$("src").textContent=t}
+srcMsg(`기본 속담 ${items.length}개로 시작해요. 선생님 CSV 파일을 불러오면 그 문제로 바뀌어요.`);
+
+function parseCSV(t){
+  return t.replace(/^\uFEFF/,"").split(/\r?\n/).map(l=>{
+    const m=l.match(/^\s*(?:"([^"]*)"|([^,]*))\s*,\s*(?:"([^"]*)"|(.*))\s*$/);
+    return m?[(m[1]??m[2]).trim(),(m[3]??m[4]).trim()]:null;
+  }).filter(r=>r&&r[0]&&r[1]&&!/^(문제|질문|question|앞부분)$/i.test(r[0])).map(r=>({f:r[0],b:r[1]}));
+}
+$("pick").onclick=()=>$("csv").click();
+$("csv").onchange=async e=>{
+  const f=e.target.files[0];if(!f)return;
+  const buf=await f.arrayBuffer();let t;
+  try{t=new TextDecoder("utf-8",{fatal:true}).decode(buf)}catch(_){t=new TextDecoder("euc-kr").decode(buf)}
+  const r=parseCSV(t);
+  if(r.length){items=r;srcMsg(`불러온 속담 ${r.length}개로 게임해요.`)}
+  else srcMsg("읽을 수 있는 속담이 없어요. 한 줄에 ‘앞부분,뒷부분’ 형식인지 확인해 주세요.");
+  e.target.value="";
+};
+$("lim").oninput=()=>{$("tv").textContent=$("lim").value};
+
+function start(){
+  clearInterval(S.timer);
+  const t=+$("lim").value;
+  S={time:t,end:Date.now()+t*1000,score:0,right:0,tried:0,hints:0,q:null,queue:[],miss:[],lock:false,over:false};
+  show("s-game");stats();tick();
+  S.timer=setInterval(tick,200);
+  next();
+}
+function tick(){
+  const ms=S.end-Date.now(),l=Math.max(0,Math.ceil(ms/1000));
+  $("tl").textContent=l+"초";
+  $("bar").firstElementChild.style.width=Math.max(0,ms/(S.time*10))+"%";
+  $("bar").classList.toggle("low",l<=10);
+  if(ms<=0&&!S.over)finish();
+}
+function stats(){$("sc").textContent=S.score;$("rt").textContent=S.right}
+function next(){
+  if(!S.queue.length)S.queue=sh(items);
+  S.q=S.queue.pop();S.hints=0;S.lock=false;
+  $("q").textContent=S.q.f+" …";
+  $("ans").value="";say("","");draw();$("ans").focus();
+}
+function say(t,c){const f=$("fb");f.textContent=t;f.className="fb "+c}
+function draw(){
+  const c=$("cells");c.textContent="";
+  if(!S.hints){
+    const p=document.createElement("span");p.className="muted";p.textContent="막히면 힌트를 눌러요";c.append(p);
+  }else{
+    const a=[...S.q.b];
+    a.forEach((ch,i)=>{
+      if(/\s/.test(ch)){const g=document.createElement("span");g.className="gap";c.append(g);return}
+      const first=i===0||/\s/.test(a[i-1]);
+      const d=document.createElement("span");
+      d.className="cell";
+      if(S.hints>1&&first){d.textContent=ch;d.classList.add("known")}else d.textContent=cho(ch);
+      c.append(d);
+    });
+  }
+  $("hint").textContent=`💡 초성 힌트 (${2-S.hints}번 남음)`;
+  $("hint").disabled=S.hints>=2||S.lock;
+}
+function lockNext(ms){
+  S.lock=true;draw();
+  const g=S;
+  setTimeout(()=>{if(S===g&&!S.over)next()},ms);
+}
+function addMiss(){if(!S.miss.includes(S.q))S.miss.push(S.q)}
+function check(){
+  if(S.lock||S.over)return;
+  const v=norm($("ans").value);if(!v)return;
+  const a=norm(S.q.b);
+  if(v===a||v===norm(S.q.f)+a){
+    const g=Math.max(1,10-3*S.hints);
+    S.score+=g;S.right++;S.tried++;stats();
+    say(`정답! +${g}점`,"ok");fireworks();lockNext(1300);
+  }else{
+    say("아쉬워요, 다시 생각해 봐요","bad");
+    const i=$("ans");i.classList.remove("shake");void i.offsetWidth;i.classList.add("shake");i.select();
+  }
+}
+function skip(){
+  if(S.lock||S.over)return;
+  S.tried++;addMiss();
+  say(`정답은 “${S.q.b}” 예요`,"bad");lockNext(2000);
+}
+function finish(){
+  S.over=true;clearInterval(S.timer);
+  if(!S.lock)addMiss();
+  const ac=S.tried?Math.round(S.right/S.tried*100):null;
+  $("e-msg").textContent=!S.tried?"시간이 끝났어요!":ac>=80?"정말 잘했어요!":"조금만 더 연습해요!";
+  $("e-sc").textContent=S.score;
+  $("e-rt").textContent=S.right;
+  $("e-ac").textContent=ac===null?"-":ac+"%";
+  const ul=$("e-miss");ul.textContent="";
+  if(!S.miss.length){const li=document.createElement("li");li.textContent="틀린 속담이 없어요. 최고예요!";ul.append(li)}
+  S.miss.forEach(m=>{const li=document.createElement("li");li.textContent=m.f+" "+m.b;ul.append(li)});
+  show("s-end");
+}
+
+$("go").onclick=start;
+$("again").onclick=start;
+$("home").onclick=()=>{show("s-start")};
+$("ok").onclick=check;
+$("skip").onclick=skip;
+$("hint").onclick=()=>{if(S.lock||S.hints>=2)return;S.hints++;draw();$("ans").focus()};
+$("ans").addEventListener("keydown",e=>{if(e.key==="Enter")check()});
+</script>
+</body>
+</html>
