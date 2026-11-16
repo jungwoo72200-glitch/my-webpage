@@ -1,290 +1,224 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="바이브코딩과 다양한 AI 도구를 좋아하는 한정우의 개인 홈페이지">
-  <title>한정우 | 개인 홈페이지</title>
-  <style>
-    :root {
-      --bg: #f7f7fb; --paper: #fff; --ink: #25243a; --muted: #68677b;
-      --accent: #7057c8; --accent-light: #eee9ff; --line: #e8e6f0;
-      --mint: #e8f6f0; --shadow: 0 18px 50px rgba(45,36,83,.07);
-    }
-    * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
-    body { margin: 0; color: var(--ink); background: var(--bg); font-family: -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans KR",sans-serif; line-height: 1.7; }
-    a { color: inherit; }
-    .container { width: min(980px, calc(100% - 36px)); margin: 0 auto; }
-    .topbar { padding: 22px 0; }
-    .nav { display: flex; justify-content: space-between; align-items: center; gap: 18px; }
-    .logo { font-size: .95rem; font-weight: 850; letter-spacing: .06em; text-decoration: none; }
-    .nav-links { display: flex; gap: 22px; flex-wrap: wrap; }
-    .nav-links a { color: var(--muted); text-decoration: none; font-size: .9rem; }
-    .nav-links a:hover,.nav-links a:focus-visible { color: var(--accent); }
-    .hero { position: relative; overflow: hidden; padding: clamp(30px,7vw,70px); border: 1px solid #e9e3ff; border-radius: 28px; background: linear-gradient(125deg,#f0ecff 0%,#fff 65%,#f0faf5 100%); box-shadow: var(--shadow); }
-    .hero:after { content: "✦"; position: absolute; right: 8%; top: 12%; color: #d9d0ff; font-size: clamp(4rem,10vw,8rem); line-height: 1; pointer-events: none; }
-    .eyebrow { position: relative; z-index: 1; color: var(--accent); font-size: .78rem; font-weight: 800; letter-spacing: .18em; }
-    h1 { position: relative; z-index: 1; margin: 13px 0 18px; font-size: clamp(2.4rem,7vw,4.3rem); line-height: 1.16; letter-spacing: -.06em; }
-    .intro { position: relative; z-index: 1; max-width: 620px; margin: 0; color: #59576d; font-size: clamp(1rem,2.4vw,1.13rem); }
-    .pills { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; }
-    .pill { padding: 6px 12px; border-radius: 999px; background: var(--accent-light); color: #5c45b0; font-size: .83rem; font-weight: 700; }
-    main { padding: 34px 0 56px; }
-    section { margin-top: 34px; scroll-margin-top: 20px; }
-    .section-title { margin: 0 0 4px; font-size: 1.4rem; letter-spacing: -.035em; }
-    .section-desc { margin: 0 0 17px; color: var(--muted); font-size: .93rem; }
-    .card { padding: 24px; border: 1px solid var(--line); border-radius: 20px; background: var(--paper); }
-    .about-text { margin: 0; color: #555469; }
-    .grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 15px; }
-    .interest-card { min-height: 170px; }
-    .icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; background: var(--accent-light); font-size: 1.3rem; }
-    .interest-card:nth-child(2) .icon { background: var(--mint); }
-    .card h3 { margin: 12px 0 5px; font-size: 1.03rem; }
-    .card p { color: var(--muted); margin: 0; font-size: .93rem; }
-    .activity-list { display: grid; gap: 12px; }
-    .activity { display: flex; align-items: flex-start; gap: 13px; }
-    .dot { flex: 0 0 9px; height: 9px; margin-top: 9px; border-radius: 50%; background: var(--accent); }
-    .activity strong { display: block; margin-bottom: 2px; }
-    .activity span { display: block; color: var(--muted); font-size: .92rem; }
-    
-    /* 프로젝트 영역 스타일 */
-    .project-list { display: grid; gap: 18px; }
-    .project { display: flex; gap: 16px; align-items: flex-start; }
-    .project .icon { flex-shrink: 0; }
-    .project h3 { margin: 0 0 6px; }
-    .tag { display: inline-block; margin-top: 12px; padding: 4px 10px; border-radius: 999px; background: #f1eef9; color: #685696; font-size: .78rem; font-weight: 700; }
-    .project-link { display: inline-flex; align-items: center; gap: 7px; margin-top: 14px; padding: 9px 13px; border-radius: 10px; background: var(--accent); color: #fff; font-size: .88rem; font-weight: 750; text-decoration: none; }
-    .project-link:hover,.project-link:focus-visible { background: #5b43b0; }
-    
-    .contact-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
-    .email { font-weight: 750; color: var(--accent); overflow-wrap: anywhere; }
-    .email-note { margin-top: 10px !important; font-size: .82rem !important; }
-    footer { padding: 23px 0 30px; color: #8b899b; text-align: center; font-size: .82rem; }
-    @media (max-width: 620px) {
-      .container { width: calc(100% - 24px); }
-      .topbar { padding: 16px 0; }
-      .nav { align-items: flex-start; flex-direction: column; }
-      .nav-links { gap: 14px; }
-      .hero { border-radius: 22px; padding: 30px 22px; }
-      .hero:after { right: 5%; top: 8%; opacity: .65; }
-      .grid { grid-template-columns: 1fr; }
-      .card { padding: 20px; }
-    }
-    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>습관 트래커</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="manifest" href="./manifest.json">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { -webkit-tap-highlight-color: transparent; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
 </head>
-<body>
-  <header class="topbar">
-    <nav class="container nav" aria-label="주요 메뉴">
-      <a class="logo" href="#home">HAN JUNGWOO</a>
-      <div class="nav-links">
-        <a href="#about">소개</a><a href="#interests">관심사</a><a href="#activities">주요 활동</a><a href="#projects">프로젝트</a><a href="#contact">연락처</a>
-      </div>
+<body class="bg-gray-100 text-gray-800 pb-20 font-sans">
+    <!-- Header -->
+    <header class="bg-blue-600 text-white p-4 shadow-md sticky top-0 z-10">
+        <h1 class="text-xl font-bold text-center">운동 및 습관 트래커</h1>
+    </header>
+
+    <!-- Main Content -->
+    <main class="p-4 max-w-md mx-auto">
+        <!-- Home Tab -->
+        <div id="home-tab" class="tab-content active">
+            <div class="bg-white rounded-xl shadow p-5 mb-4">
+                <h2 class="text-lg font-semibold mb-3">오늘의 기록 (<span id="today-date"></span>)</h2>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">달리기 (km)</label>
+                    <input type="number" id="run-input" class="w-full border rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="예: 5">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">푸시업 (개)</label>
+                    <input type="number" id="pushup-input" class="w-full border rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="예: 30">
+                </div>
+                
+                <div class="mb-4">
+                    <h3 class="text-sm font-medium text-gray-700 mb-2">습관 체크</h3>
+                    <label class="flex items-center space-x-3 mb-2 p-3 bg-gray-50 rounded-lg border cursor-pointer hover:bg-gray-100 transition">
+                        <input type="checkbox" id="habit1" class="w-5 h-5 text-blue-600 rounded cursor-pointer">
+                        <span class="font-medium">물 2L 마시기</span>
+                    </label>
+                    <label class="flex items-center space-x-3 mb-2 p-3 bg-gray-50 rounded-lg border cursor-pointer hover:bg-gray-100 transition">
+                        <input type="checkbox" id="habit2" class="w-5 h-5 text-blue-600 rounded cursor-pointer">
+                        <span class="font-medium">독서 30분</span>
+                    </label>
+                </div>
+
+                <button onclick="saveTodayData()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg shadow hover:bg-blue-700 active:scale-95 transition">기록 저장하기</button>
+                <p id="save-msg" class="text-blue-600 text-sm mt-3 font-bold hidden text-center">✅ 성공적으로 저장되었습니다!</p>
+            </div>
+        </div>
+
+        <!-- Calendar & Stats Tab -->
+        <div id="stats-tab" class="tab-content">
+            <div class="bg-white rounded-xl shadow p-5 mb-4">
+                <h2 class="text-lg font-semibold mb-3">최근 7일 통계</h2>
+                <canvas id="monthlyChart" width="400" height="250"></canvas>
+            </div>
+
+            <div class="bg-white rounded-xl shadow p-5">
+                <h2 class="text-lg font-semibold mb-3">전체 기록</h2>
+                <div id="history-list" class="space-y-3">
+                    <!-- History items will be injected here -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="fixed bottom-0 w-full bg-white border-t flex justify-around p-2 pb-safe z-10 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+        <button onclick="switchTab('home')" class="nav-btn w-1/2 text-blue-600 flex flex-col items-center p-2 transition" data-target="home-tab">
+            <i class="fas fa-home text-xl mb-1"></i>
+            <span class="text-xs font-medium">기록하기</span>
+        </button>
+        <button onclick="switchTab('stats')" class="nav-btn w-1/2 text-gray-400 flex flex-col items-center p-2 transition" data-target="stats-tab">
+            <i class="fas fa-chart-bar text-xl mb-1"></i>
+            <span class="text-xs font-medium">통계조회</span>
+        </button>
     </nav>
-  </header>
 
-  <div class="container" id="home">
-    <section class="hero" aria-labelledby="main-heading">
-      <div class="eyebrow">PERSONAL WEBSITE · 2026</div>
-      <h1 id="main-heading">안녕하세요,<br>한정우입니다.</h1>
-      <p class="intro">바이브코딩을 좋아하는 한정우입니다. 다양한 AI 도구를 활용해 아이디어를 구체화하고, 직접 만들어 보는 과정에 관심이 있습니다.</p>
-      <div class="pills" aria-label="관심 분야"><span class="pill">바이브코딩</span><span class="pill">AI 도구</span><span class="pill">웹 프로젝트</span></div>
-    </section>
-  </div>
+    <script>
+        // Service Worker Registration for PWA (Offline & Installable)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(err => {
+                    console.log('SW registration failed: ', err);
+                });
+            });
+        }
 
-  <main class="container">
-    <section id="about">
-      <h2 class="section-title">저를 소개합니다</h2>
-      <p class="section-desc">방문자가 가장 먼저 알아야 할 기본 정보입니다.</p>
-      <div class="card"><p class="about-text">안녕하세요 바이브코딩을 좋아하는 한정우입니다. 새로운 AI 도구를 살펴보고, 이를 활용해 필요한 것을 직접 만들어 보는 데 흥미가 있습니다.</p></div>
-    </section>
+        // App State
+        const STORAGE_KEY = 'habitTrackerData_v2';
+        let appData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+        let chartInstance = null;
 
-    <section id="interests">
-      <h2 class="section-title">관심사</h2><p class="section-desc">평소 관심을 가지고 탐색하는 분야입니다.</p>
-      <div class="grid">
-        <article class="card interest-card"><div class="icon" aria-hidden="true">⌘</div><h3>바이브코딩</h3><p>AI와 함께 아이디어를 구체화하고 웹사이트나 작은 서비스를 만들어 보는 것을 좋아합니다.</p></article>
-        <article class="card interest-card"><div class="icon" aria-hidden="true">✦</div><h3>여러 가지 AI 툴</h3><p>다양한 AI 도구의 기능을 알아보고 공부와 프로젝트에 활용할 방법을 찾아봅니다.</p></article>
-      </div>
-    </section>
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', () => {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('today-date').innerText = today;
+            loadTodayData(today);
+        });
 
-    <section id="activities">
-      <h2 class="section-title">주요 활동</h2><p class="section-desc">현재까지 제공된 학력 및 학업 정보를 정리했습니다.</p>
-      <div class="card activity-list">
-        <div class="activity"><span class="dot" aria-hidden="true"></span><div><strong>대학교 수업 이수 중</strong><span>약 70학점의 수업을 이수하고 있습니다.</span></div></div>
-        <div class="activity"><span class="dot" aria-hidden="true"></span><div><strong>고등학교 졸업</strong><span>고등학교 과정을 졸업했습니다.</span></div></div>
-      </div>
-    </section>
+        // Tab Switching Logic
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(el => {
+                el.classList.remove('text-blue-600');
+                el.classList.add('text-gray-400');
+            });
+            
+            document.getElementById(`${tab}-tab`).classList.add('active');
+            const activeBtn = document.querySelector(`[data-target="${tab}-tab"]`);
+            activeBtn.classList.remove('text-gray-400');
+            activeBtn.classList.add('text-blue-600');
 
-    <!-- 프로젝트 섹션 (총 14개 프로젝트 완벽 연동) -->
-    <section id="projects">
-      <h2 class="section-title">개별 프로젝트</h2>
-      <p class="section-desc">직접 기획하거나 제작한 프로젝트를 소개합니다.</p>
-      
-      <div class="project-list">
-        <!-- 1. 오늘의 할 일 관리 앱 -->
-        <article class="card project">
-          <div class="icon" aria-hidden="true">✓</div>
-          <div>
-            <h3>오늘의 할 일 관리 앱</h3>
-            <p>오늘 해야 할 일을 기록하고 완료 여부를 확인해 하루의 할 일을 정리하는 웹 애플리케이션 프로젝트입니다.</p>
-            <span class="tag">개인 프로젝트</span><br>
-            <a class="project-link" href="./%EC%98%A4%EB%8A%98%EC%9D%98%20%ED%95%A0%20%EC%9D%BC%20(1).html" target="_blank">프로젝트 열기 ↗</a>
-          </div>
-        </article>
+            if(tab === 'stats') {
+                updateStats();
+            }
+        }
 
-        <!-- 2. KDC 한국십진분류법 주류 연결하기 게임 -->
-        <article class="card project">
-          <div class="icon" aria-hidden="true">📚</div>
-          <div>
-            <h3>KDC 한국십진분류법 주류 연결하기 게임</h3>
-            <p>초등학생 및 저학년 학생들의 집중력을 높이고 즐겁게 학습할 수 있는 2D 카드 뒤집기 교육용 디지털 교구입니다. 000(총류)부터 900(역사)까지의 분류 기호와 주제를 짝지어 매칭합니다.</p>
-            <span class="tag">교육용 디지털 교구</span><br>
-            <a class="project-link" href="./gemini-code-1793601846112.html" target="_blank">게임 플레이하기 ↗</a>
-          </div>
-        </article>
+        // Save Data to LocalStorage
+        function saveTodayData() {
+            const today = new Date().toISOString().split('T')[0];
+            
+            appData[today] = {
+                run: parseFloat(document.getElementById('run-input').value) || 0,
+                pushup: parseInt(document.getElementById('pushup-input').value) || 0,
+                habit1: document.getElementById('habit1').checked,
+                habit2: document.getElementById('habit2').checked
+            };
 
-        <!-- 3. 디지털 도장 및 사인 생성기 -->
-        <article class="card project">
-          <div class="icon" aria-hidden="true">🏷️</div>
-          <div>
-            <h3>디지털 도장 및 사인 생성기</h3>
-            <p>온라인 교육 활동이나 서류에 활용할 수 있는 도장 생성기입니다. 이름 기반의 전통 도장, 학급 칭찬 스티커 로고, 그리고 캔버스 터치 서명 패드를 제공하여 투명 PNG로 즉시 다운로드할 수 있습니다.</p>
-            <span class="tag">웹 유틸리티 도구</span><br>
-            <a class="project-link" href="./code_artifact.html" target="_blank">도장 만들기 ↗</a>
-          </div>
-        </article>
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+            
+            const msg = document.getElementById('save-msg');
+            msg.classList.remove('hidden');
+            setTimeout(() => msg.classList.add('hidden'), 2500);
+        }
 
-        <!-- 4. 객관식 퀴즈 (독도의 날 · 독서) -->
-        <article class="card project">
-          <div class="icon" aria-hidden="true">🎯</div>
-          <div>
-            <h3>객관식 퀴즈 (독도의 날 · 독서)</h3>
-            <p>독도의 역사와 지리, 그리고 독서와 관련된 10문제를 풀어보며 즐겁게 배울 수 있는 대화형 퀴즈 웹 애플리케이션입니다. 효과음과 함께 정답 여부를 직관적으로 확인할 수 있습니다.</p>
-            <span class="tag">교육용 인터랙티브 퀴즈</span><br>
-            <a class="project-link" href="./%EA%B0%9D%EA%B4%80%EC%8B%9D%20%ED%80%B4%EC%A6%88%20(%EB%8F%85%EB%8F%84%EC%9D%98%20%EB%82%A0%20%C2%B7%20%EB%8F%85%EC%84%9C).html" target="_blank">퀴즈 풀러 가기 ↗</a>
-          </div>
-        </article>
+        // Load Data from LocalStorage
+        function loadTodayData(date) {
+            if (appData[date]) {
+                document.getElementById('run-input').value = appData[date].run || '';
+                document.getElementById('pushup-input').value = appData[date].pushup || '';
+                document.getElementById('habit1').checked = appData[date].habit1 || false;
+                document.getElementById('habit2').checked = appData[date].habit2 || false;
+            }
+        }
 
-        <!-- 5. 도형 돌려 보기 (회전·뒤집기 학습 도구) -->
-        <article class="card project">
-          <div class="icon" aria-hidden="true">📐</div>
-          <div>
-            <h3>도형 돌려 보기 (회전·뒤집기 학습 도구)</h3>
-            <p>다양한 다각형을 시계/반시계 방향으로 돌리거나 상하/좌우로 뒤집어 보며 공간지각력을 기를 수 있는 수학 교구입니다. 연습 모드와 목표 모양을 맞추는 퀴즈 모드를 지원합니다.</p>
-            <span class="tag">수학 디지털 교구</span><br>
-            <a class="project-link" href="./%EB%8F%84%ED%98%95%20%EB%8F%8C%EB%A0%A4%20%EB%B3%B4%EA%B8%B0%20(%ED%9A%8C%EC%A0%84%C2%B7%EB%92%A4%EC%A7%91%EA%B8%B0%20%ED%95%99%EC%8A%B5%20%EB%8F%84%EA%B5%AC).html" target="_blank">도형 조작하기 ↗</a>
-          </div>
-        </article>
+        // Update Statistics & Chart
+        function updateStats() {
+            const dates = Object.keys(appData).sort();
+            const historyList = document.getElementById('history-list');
+            historyList.innerHTML = '';
+            
+            if (dates.length === 0) {
+                historyList.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">저장된 기록이 없습니다.</p>';
+            }
 
-        <!-- 6. 조선 시대 인터랙티브 연표 -->
-        <article class="card project">
-          <div class="icon" aria-hidden="true">🏯</div>
-          <div>
-            <h3>조선 시대 인터랙티브 연표</h3>
-            <p>조선 건국부터 대한제국 선포까지의 주요 역사적 사건을 가로/세로 방향과 실제 시간 간격 비례로 탐색할 수 있는 반응형 역사 연표 교구입니다. 상세 해설 및 어휘 카드를 제공합니다.</p>
-            <span class="tag">역사 디지털 교구</span><br>
-            <a class="project-link" href="./%EC%A1%B0%EC%84%A0%20%EC%8B%9C%EB%8C%80%20%EC%9D%B8%ED%84%B0%EB%9E%99%ED%8B%B0%EB%B8%8C%20%EC%97%B0%ED%91%9C.html" target="_blank">연표 둘러보기 ↗</a>
-          </div>
-        </article>
+            // Render History List (Reverse Order)
+            [...dates].reverse().forEach(date => {
+                const data = appData[date];
+                const item = document.createElement('div');
+                item.className = 'border p-3 rounded-lg bg-gray-50 text-sm';
+                item.innerHTML = `
+                    <div class="font-bold text-gray-800 mb-1">${date}</div>
+                    <div class="text-gray-700 mb-1">🏃 달리기: <span class="font-medium text-blue-600">${data.run}km</span> &nbsp;|&nbsp; 💪 푸시업: <span class="font-medium text-red-500">${data.pushup}개</span></div>
+                    <div class="flex gap-2 mt-2">
+                        <span class="px-2 py-1 text-xs rounded-full ${data.habit1 ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-500'}">💧 물 2L</span>
+                        <span class="px-2 py-1 text-xs rounded-full ${data.habit2 ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-500'}">📚 독서</span>
+                    </div>
+                `;
+                historyList.appendChild(item);
+            });
 
-        <!-- 7. 디지털 리터러시 자기평가 레이더 차트 -->
-        <article class="card project">
-          <div class="icon" aria-hidden="true">📊</div>
-          <div>
-            <h3>디지털 리터러시 자기평가 레이더 차트</h3>
-            <p>사전평가와 사후평가를 하나의 방사형(레이더) 차트에 겹쳐 시각화하고, 성장도와 보완 영역을 자동으로 분석해 주는 교육 평가 도구입니다. 차트 PNG 이미지 저장 기능을 지원합니다.</p>
-            <span class="tag">데이터 시각화 도구</span><br>
-            <a class="project-link" href="./%EB%94%94%EC%A7%80%ED%84%B8%20%EB%A6%AC%ED%84%B0%EB%9F%AC%EC%8B%9C%20%EC%9E%90%EA%B8%B0%ED%8F%89%EA%B0%80%20%EB%A0%88%EC%9D%B4%EB%8D%94%20%EC%B0%A8%ED%8A%B8.html" target="_blank">차트 확인하기 ↗</a>
-          </div>
-        </article>
+            // Update Chart (Last 7 Days)
+            const recentDates = dates.slice(-7);
+            const runData = recentDates.map(date => appData[date].run);
+            const pushupData = recentDates.map(date => appData[date].pushup);
+            const shortDates = recentDates.map(d => d.substring(5)); // Extract MM-DD
 
-        <!-- 8. 마음 한 줄 (감정 상태별 명언 추천 앱) -->
-        <article class="card project">
-          <div class="icon" aria-hidden="true">💌</div>
-          <div>
-            <h3>마음 한 줄 · 감정 상태별 명언 추천 앱</h3>
-            <p>기쁨, 슬픔, 번아웃, 불안 등 현재 마음 상태에 맞춰 위로와 동기부여를 건네는 감정 큐레이션 앱입니다. 연속 출현 방지 및 맞춤형 명언 목록 관리 기능을 제공합니다.</p>
-            <span class="tag">감정 힐링 웹앱</span><br>
-            <a class="project-link" href="./emotion_quote_app.html" target="_blank">명언 보러 가기 ↗</a>
-          </div>
-        </article>
-        
-        <!-- 9. 3D 주사위 시뮬레이터 -->
-        <article class="card project">
-          <div class="icon" aria-hidden="true">🎲</div>
-          <div>
-            <h3>3D 주사위 시뮬레이터</h3>
-            <p>주사위를 굴려 각 눈이 나온 횟수와 백분율 비율을 바로 확인할 수 있는 통계 시뮬레이터입니다[cite: 1].</p>
-            <span class="tag">확률 시뮬레이터</span><br>
-            <a class="project-link" href="./3D 주사위 시뮬레이터.html" target="_blank">프로젝트 열기 ↗</a>
-          </div>
-        </article>
-        
-        <!-- 10. AI 식단 찰칵 -->
-        <article class="card project">
-          <div class="icon" aria-hidden="true">📸</div>
-          <div>
-            <h3>AI 식단 찰칵 - AI 칼로리 분석</h3>
-            <p>사진 한 장으로 음식의 칼로리와 영양성분(탄수화물, 단백질, 지방)을 AI가 자동 분석하여 총 섭취량을 한눈에 보여주는 웹앱입니다[cite: 2].</p>
-            <span class="tag">AI 영양 분석 도구</span><br>
-            <a class="project-link" href="./ai (1).html" target="_blank">프로젝트 열기 ↗</a>
-          </div>
-        </article>
+            const ctx = document.getElementById('monthlyChart').getContext('2d');
+            
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
 
-        <!-- 11. 제미나이 AI 캐치마인드 -->
-        <article class="card project">
-          <div class="icon" aria-hidden="true">🎨</div>
-          <div>
-            <h3>제미나이 AI 캐치마인드 - 그림 맞추기 퀴즈</h3>
-            <p>동물, 과일 등 카테고리를 선택해 제시어를 그림으로 그리면 제미나이 비전 AI가 무엇인지 추론하여 맞히는 대화형 그림 퀴즈입니다[cite: 3].</p>
-            <span class="tag">AI 그림 퀴즈 웹앱</span><br>
-            <a class="project-link" href="./ai.html" target="_blank">프로젝트 열기 ↗</a>
-          </div>
-        </article>
-
-        <!-- 12. 즐거운 시계 읽기 박사 -->
-        <article class="card project">
-          <div class="icon" aria-hidden="true">⏰</div>
-          <div>
-            <h3>째깍째깍! 즐거운 시계 읽기 박사</h3>
-            <p>초등학교 1~2학년 학생을 위한 인터랙티브 시계 학습 교구로, 바늘을 직접 조작하고 난이도별 퀴즈를 풀며 시계 읽는 원리를 학습합니다[cite: 4].</p>
-            <span class="tag">초등 수학 디지털 교구</span><br>
-            <a class="project-link" href="./code_artifact.html" target="_blank">프로젝트 열기 ↗</a>
-          </div>
-        </article>
-        
-        <!-- 13. 수학 대모험 -->
-        <article class="card project">
-          <div class="icon" aria-hidden="true">🧮</div>
-          <div>
-            <h3>수학 대모험</h3>
-            <p>초등학생과 중학생의 기초 연산 능력을 높이기 위해 타임어택, 무한모드 등 다양한 게임화 요소를 결합한 인터랙티브 수학 학습 웹앱입니다[cite: 5].</p>
-            <span class="tag">수학 연산 학습 게임</span><br>
-            <a class="project-link" href="./math-adventure.html" target="_blank">프로젝트 열기 ↗</a>
-          </div>
-        </article>
-        
-        <!-- 14. 속담 이어서 말하기 -->
-        <article class="card project">
-          <div class="icon" aria-hidden="true">🗣️</div>
-          <div>
-            <h3>속담 이어서 말하기</h3>
-            <p>속담의 앞부분을 보고 뒷부분을 맞히는 게임으로, 초성 힌트 기능과 CSV 파일을 통한 문제 추가 기능을 지원합니다[cite: 6].</p>
-            <span class="tag">국어 속담 퀴즈 게임</span><br>
-            <a class="project-link" href="./속담 이어서 말하기.html" target="_blank">프로젝트 열기 ↗</a>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <section id="contact">
-      <h2 class="section-title">연락처</h2><p class="section-desc">이메일로 연락할 수 있습니다.</p>
-      <div class="card">
-        <div class="contact-row"><div><h3 style="margin:0 0 4px;">이메일</h3><p>연락처 정보</p></div><span class="email">hou7220@naver.com</span></div>
-        <p class="email-note">궁금한 점이나 협업 관련 문의는 위 이메일로 보내주세요.</p>
-      </div>
-    </section>
-  </main>
-  <footer class="container">© 2026 한정우 · 개인 홈페이지</footer>
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: shortDates.length > 0 ? shortDates : ['기록없음'],
+                    datasets: [
+                        {
+                            label: '달리기 (km)',
+                            data: runData.length > 0 ? runData : [0],
+                            backgroundColor: 'rgba(37, 99, 235, 0.7)',
+                            borderRadius: 4
+                        },
+                        {
+                            label: '푸시업 (개)',
+                            data: pushupData.length > 0 ? pushupData : [0],
+                            backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                            borderRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    interaction: { mode: 'index', intersect: false },
+                    scales: { 
+                        y: { beginAtZero: true, grid: { borderDash: [2, 4] } },
+                        x: { grid: { display: false } }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+    </script>
 </body>
 </html>

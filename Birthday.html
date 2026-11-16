@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>학급 생일 관리 앱</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+    body { font-family: 'Pretendard', sans-serif; }
+  </style>
+</head>
+<body class="bg-slate-50 min-h-screen py-8 px-4">
+  <div class="max-w-3xl mx-auto space-y-6">
+    
+    <!-- 헤더 영역 -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex items-center justify-between">
+      <div>
+        <span class="inline-block px-2.5 py-1 bg-indigo-50 text-indigo-600 text-xs font-semibold rounded-full mb-2">Google Sheets 연동 웹 앱</span>
+        <h1 class="text-2xl font-bold text-slate-800">🎂 학급·소모임 생일 관리</h1>
+        <p class="text-sm text-slate-500 mt-1">구글 시트에 생일 정보를 기록하고 월별·생일순으로 간편하게 조회합니다.</p>
+      </div>
+      <div class="text-right hidden sm:block">
+        <div class="text-xs text-slate-400">오늘 날짜</div>
+        <div id="todayDisplay" class="text-sm font-semibold text-slate-700"></div>
+      </div>
+    </div>
+
+    <!-- 생일 등록 폼 -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+      <h2 class="text-base font-bold text-slate-800 mb-4">새 생일 등록하기</h2>
+      
+      <form id="birthdayForm" onsubmit="handleSave(event)" class="grid grid-cols-1 sm:grid-cols-12 gap-3">
+        <div class="sm:col-span-3">
+          <label class="block text-xs font-medium text-slate-600 mb-1">이름 *</label>
+          <input type="text" id="nameInput" required placeholder="예: 홍길동"
+            class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+        
+        <!-- 검토질문 ① 동명이인 구분용 소속/메모 입력란 -->
+        <div class="sm:col-span-4">
+          <label class="block text-xs font-medium text-slate-600 mb-1">소속 / 역할 / 메모 (동명이인 구분)</label>
+          <input type="text" id="noteInput" placeholder="예: 1분단 / 총무 / 번호 뒷자리"
+            class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+
+        <div class="sm:col-span-3">
+          <label class="block text-xs font-medium text-slate-600 mb-1">생년월일 *</label>
+          <input type="date" id="birthdayInput" required
+            class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+
+        <div class="sm:col-span-2 flex items-end">
+          <button type="submit" id="submitBtn"
+            class="w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-lg transition">
+            저장
+          </button>
+        </div>
+      </form>
+
+      <!-- 저장 성공·실패 안내 메시지 영역 -->
+      <div id="statusAlert" class="hidden mt-3 px-4 py-2.5 rounded-lg text-sm font-medium"></div>
+    </div>
+
+    <!-- 생일 목록 및 월별 조회 영역 -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+        <div class="flex items-center gap-2">
+          <h2 class="text-base font-bold text-slate-800">등록된 생일 목록</h2>
+          <span id="countBadge" class="px-2.5 py-0.5 bg-slate-100 text-slate-700 text-xs font-bold rounded-full">0명</span>
+        </div>
+        
+        <div class="flex items-center gap-2">
+          <input type="text" id="searchInput" oninput="renderList()" placeholder="이름 또는 소속 검색..."
+            class="px-3 py-1.5 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <button onclick="loadData()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg transition">
+            새로고침
+          </button>
+        </div>
+      </div>
+
+      <!-- 검토질문 ② 전체 및 월별 학생 리스트 필터 버튼 -->
+      <div id="monthTabs" class="flex flex-wrap gap-1.5 mb-5 pb-3 border-b border-slate-100">
+        <!-- 자바스크립트에서 전체 ~ 12월 버튼 자동 생성 -->
+      </div>
+
+      <!-- 테이블 리스트 -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="border-b border-slate-200 text-xs font-semibold text-slate-500 bg-slate-50">
+              <th class="py-2.5 px-3 rounded-tl-lg">생일 (월/일)</th>
+              <th class="py-2.5 px-3">이름</th>
+              <th class="py-2.5 px-3">소속 / 메모</th>
+              <th class="py-2.5 px-3">생년월일</th>
+              <th class="py-2.5 px-3 rounded-tr-lg text-right">D-Day</th>
+            </tr>
+          </thead>
+          <tbody id="birthdayTableBody" class="divide-y divide-slate-100 text-sm">
+            <tr>
+              <td colspan="5" class="py-8 text-center text-slate-400">데이터를 불러오는 중입니다...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let allBirthdays = [];
+    let selectedMonth = 0; // 0 = 전체, 1~12 = 각 월
+
+    // 초기 실행
+    window.onload = function() {
+      const today = new Date();
+      document.getElementById('todayDisplay').textContent = 
+        `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
+      
+      initMonthTabs();
+      loadData();
+    };
+
+    // 월별 탭 버튼 생성 (전체 + 1월 ~ 12월)
+    function initMonthTabs() {
+      const container = document.getElementById('monthTabs');
+      let html = `<button onclick="selectMonth(0)" id="tab-0" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition bg-indigo-600 text-white">전체</button>`;
+      
+      for (let m = 1; m <= 12; m++) {
+        html += `<button onclick="selectMonth(${m})" id="tab-${m}" class="px-2.5 py-1.5 rounded-lg text-xs font-medium transition bg-slate-100 text-slate-600 hover:bg-slate-200">${m}월</button>`;
+      }
+      container.innerHTML = html;
+    }
+
+    // 월 선택 변경
+    function selectMonth(month) {
+      selectedMonth = month;
+      for (let m = 0; m <= 12; m++) {
+        const btn = document.getElementById(`tab-${m}`);
+        if (m === month) {
+          btn.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition bg-indigo-600 text-white';
+        } else {
+          btn.className = 'px-2.5 py-1.5 rounded-lg text-xs font-medium transition bg-slate-100 text-slate-600 hover:bg-slate-200';
+        }
+      }
+      renderList();
+    }
+
+    // 서버(Code.gs)에서 목록 불러오기
+    function loadData() {
+      const tbody = document.getElementById('birthdayTableBody');
+      tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400">구글 시트에서 목록을 불러오는 중...</td></tr>`;
+
+      google.script.run
+        .withSuccessHandler(function(response) {
+          if (response.success) {
+            allBirthdays = response.data;
+            renderList();
+          } else {
+            showAlert(response.message, false);
+          }
+        })
+        .withFailureHandler(function(err) {
+          showAlert('서버 통신 오류가 발생했습니다: ' + err.message, false);
+        })
+        .getBirthdays();
+    }
+
+    // 다가오는 생일까지 남은 일수(D-Day) 계산
+    function getDdayText(month, day) {
+      if (!month || !day) return '-';
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      let nextBday = new Date(today.getFullYear(), month - 1, day);
+      if (nextBday < today) {
+        nextBday.setFullYear(today.getFullYear() + 1);
+      }
+      
+      const diffDays = Math.round((nextBday - today) / (1000 * 60 * 60 * 24));
+      if (diffDays === 0) return '<span class="px-2 py-0.5 bg-rose-100 text-rose-600 font-bold rounded text-xs">🎉 오늘 생일!</span>';
+      if (diffDays <= 7) return `<span class="px-2 py-0.5 bg-amber-100 text-amber-700 font-semibold rounded text-xs">D-${diffDays}</span>`;
+      return `<span class="text-slate-400 text-xs">D-${diffDays}</span>`;
+    }
+
+    // 화면에 리스트 출력 (월별 필터 + 검색어 필터)
+    function renderList() {
+      const tbody = document.getElementById('birthdayTableBody');
+      const keyword = document.getElementById('searchInput').value.trim().toLowerCase();
+
+      const filtered = allBirthdays.filter(item => {
+        const matchMonth = (selectedMonth === 0) || (item.month === selectedMonth);
+        const matchKeyword = !keyword || 
+          item.name.toLowerCase().includes(keyword) || 
+          (item.note && item.note.toLowerCase().includes(keyword));
+        return matchMonth && matchKeyword;
+      });
+
+      document.getElementById('countBadge').textContent = `${filtered.length}명`;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="py-10 text-center text-slate-400">해당 조건에 등록된 생일 정보가 없습니다.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(item => `
+        <tr class="hover:bg-slate-50 transition">
+          <td class="py-3 px-3 font-semibold text-indigo-600">${item.month}월 ${item.day}일</td>
+          <td class="py-3 px-3 font-bold text-slate-800">${escapeHtml(item.name)}</td>
+          <td class="py-3 px-3 text-slate-600">
+            ${item.note ? `<span class="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-xs">${escapeHtml(item.note)}</span>` : '<span class="text-slate-300">-</span>'}
+          </td>
+          <td class="py-3 px-3 text-slate-400 text-xs">${escapeHtml(item.birthday)}</td>
+          <td class="py-3 px-3 text-right">${getDdayText(item.month, item.day)}</td>
+        </tr>
+      `).join('');
+    }
+
+    // 새 생일 저장 요청
+    function handleSave(e) {
+      e.preventDefault();
+      const submitBtn = document.getElementById('submitBtn');
+      const formData = {
+        name: document.getElementById('nameInput').value,
+        note: document.getElementById('noteInput').value,
+        birthday: document.getElementById('birthdayInput').value
+      };
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = '저장 중...';
+
+      google.script.run
+        .withSuccessHandler(function(response) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = '저장';
+
+          if (response.success) {
+            showAlert(response.message, true);
+            document.getElementById('birthdayForm').reset();
+            loadData(); // 저장 직후 목록 다시 불러오기
+          } else {
+            showAlert(response.message, false);
+          }
+        })
+        .withFailureHandler(function(err) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = '저장';
+          showAlert('저장 중 오류가 발생했습니다: ' + err.message, false);
+        })
+        .addBirthday(formData);
+    }
+
+    // 저장 성공·실패 안내 배너 표시
+    function showAlert(msg, isSuccess) {
+      const alertBox = document.getElementById('statusAlert');
+      alertBox.textContent = msg;
+      alertBox.className = isSuccess
+        ? 'mt-3 px-4 py-2.5 rounded-lg text-sm font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 block'
+        : 'mt-3 px-4 py-2.5 rounded-lg text-sm font-medium bg-rose-50 text-rose-700 border border-rose-200 block';
+      
+      setTimeout(() => {
+        alertBox.classList.add('hidden');
+      }, 4000);
+    }
+
+    // XSS 방지용 이스케이프
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/[&<>"']/g, function(m) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+      });
+    }
+  </script>
+</body>
+</html>
