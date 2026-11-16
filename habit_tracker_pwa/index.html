@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>습관 트래커</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="manifest" href="./manifest.json">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { -webkit-tap-highlight-color: transparent; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 pb-20 font-sans">
+    <!-- Header -->
+    <header class="bg-blue-600 text-white p-4 shadow-md sticky top-0 z-10">
+        <h1 class="text-xl font-bold text-center">운동 및 습관 트래커</h1>
+    </header>
+
+    <!-- Main Content -->
+    <main class="p-4 max-w-md mx-auto">
+        <!-- Home Tab -->
+        <div id="home-tab" class="tab-content active">
+            <div class="bg-white rounded-xl shadow p-5 mb-4">
+                <h2 class="text-lg font-semibold mb-3">오늘의 기록 (<span id="today-date"></span>)</h2>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">달리기 (km)</label>
+                    <input type="number" id="run-input" class="w-full border rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="예: 5">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">푸시업 (개)</label>
+                    <input type="number" id="pushup-input" class="w-full border rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none transition" placeholder="예: 30">
+                </div>
+                
+                <div class="mb-4">
+                    <h3 class="text-sm font-medium text-gray-700 mb-2">습관 체크</h3>
+                    <label class="flex items-center space-x-3 mb-2 p-3 bg-gray-50 rounded-lg border cursor-pointer hover:bg-gray-100 transition">
+                        <input type="checkbox" id="habit1" class="w-5 h-5 text-blue-600 rounded cursor-pointer">
+                        <span class="font-medium">물 2L 마시기</span>
+                    </label>
+                    <label class="flex items-center space-x-3 mb-2 p-3 bg-gray-50 rounded-lg border cursor-pointer hover:bg-gray-100 transition">
+                        <input type="checkbox" id="habit2" class="w-5 h-5 text-blue-600 rounded cursor-pointer">
+                        <span class="font-medium">독서 30분</span>
+                    </label>
+                </div>
+
+                <button onclick="saveTodayData()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg shadow hover:bg-blue-700 active:scale-95 transition">기록 저장하기</button>
+                <p id="save-msg" class="text-blue-600 text-sm mt-3 font-bold hidden text-center">✅ 성공적으로 저장되었습니다!</p>
+            </div>
+        </div>
+
+        <!-- Calendar & Stats Tab -->
+        <div id="stats-tab" class="tab-content">
+            <div class="bg-white rounded-xl shadow p-5 mb-4">
+                <h2 class="text-lg font-semibold mb-3">최근 7일 통계</h2>
+                <canvas id="monthlyChart" width="400" height="250"></canvas>
+            </div>
+
+            <div class="bg-white rounded-xl shadow p-5">
+                <h2 class="text-lg font-semibold mb-3">전체 기록</h2>
+                <div id="history-list" class="space-y-3">
+                    <!-- History items will be injected here -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="fixed bottom-0 w-full bg-white border-t flex justify-around p-2 pb-safe z-10 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+        <button onclick="switchTab('home')" class="nav-btn w-1/2 text-blue-600 flex flex-col items-center p-2 transition" data-target="home-tab">
+            <i class="fas fa-home text-xl mb-1"></i>
+            <span class="text-xs font-medium">기록하기</span>
+        </button>
+        <button onclick="switchTab('stats')" class="nav-btn w-1/2 text-gray-400 flex flex-col items-center p-2 transition" data-target="stats-tab">
+            <i class="fas fa-chart-bar text-xl mb-1"></i>
+            <span class="text-xs font-medium">통계조회</span>
+        </button>
+    </nav>
+
+    <script>
+        // Service Worker Registration for PWA (Offline & Installable)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(err => {
+                    console.log('SW registration failed: ', err);
+                });
+            });
+        }
+
+        // App State
+        const STORAGE_KEY = 'habitTrackerData_v2';
+        let appData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+        let chartInstance = null;
+
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', () => {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('today-date').innerText = today;
+            loadTodayData(today);
+        });
+
+        // Tab Switching Logic
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(el => {
+                el.classList.remove('text-blue-600');
+                el.classList.add('text-gray-400');
+            });
+            
+            document.getElementById(`${tab}-tab`).classList.add('active');
+            const activeBtn = document.querySelector(`[data-target="${tab}-tab"]`);
+            activeBtn.classList.remove('text-gray-400');
+            activeBtn.classList.add('text-blue-600');
+
+            if(tab === 'stats') {
+                updateStats();
+            }
+        }
+
+        // Save Data to LocalStorage
+        function saveTodayData() {
+            const today = new Date().toISOString().split('T')[0];
+            
+            appData[today] = {
+                run: parseFloat(document.getElementById('run-input').value) || 0,
+                pushup: parseInt(document.getElementById('pushup-input').value) || 0,
+                habit1: document.getElementById('habit1').checked,
+                habit2: document.getElementById('habit2').checked
+            };
+
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+            
+            const msg = document.getElementById('save-msg');
+            msg.classList.remove('hidden');
+            setTimeout(() => msg.classList.add('hidden'), 2500);
+        }
+
+        // Load Data from LocalStorage
+        function loadTodayData(date) {
+            if (appData[date]) {
+                document.getElementById('run-input').value = appData[date].run || '';
+                document.getElementById('pushup-input').value = appData[date].pushup || '';
+                document.getElementById('habit1').checked = appData[date].habit1 || false;
+                document.getElementById('habit2').checked = appData[date].habit2 || false;
+            }
+        }
+
+        // Update Statistics & Chart
+        function updateStats() {
+            const dates = Object.keys(appData).sort();
+            const historyList = document.getElementById('history-list');
+            historyList.innerHTML = '';
+            
+            if (dates.length === 0) {
+                historyList.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">저장된 기록이 없습니다.</p>';
+            }
+
+            // Render History List (Reverse Order)
+            [...dates].reverse().forEach(date => {
+                const data = appData[date];
+                const item = document.createElement('div');
+                item.className = 'border p-3 rounded-lg bg-gray-50 text-sm';
+                item.innerHTML = `
+                    <div class="font-bold text-gray-800 mb-1">${date}</div>
+                    <div class="text-gray-700 mb-1">🏃 달리기: <span class="font-medium text-blue-600">${data.run}km</span> &nbsp;|&nbsp; 💪 푸시업: <span class="font-medium text-red-500">${data.pushup}개</span></div>
+                    <div class="flex gap-2 mt-2">
+                        <span class="px-2 py-1 text-xs rounded-full ${data.habit1 ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-500'}">💧 물 2L</span>
+                        <span class="px-2 py-1 text-xs rounded-full ${data.habit2 ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-500'}">📚 독서</span>
+                    </div>
+                `;
+                historyList.appendChild(item);
+            });
+
+            // Update Chart (Last 7 Days)
+            const recentDates = dates.slice(-7);
+            const runData = recentDates.map(date => appData[date].run);
+            const pushupData = recentDates.map(date => appData[date].pushup);
+            const shortDates = recentDates.map(d => d.substring(5)); // Extract MM-DD
+
+            const ctx = document.getElementById('monthlyChart').getContext('2d');
+            
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: shortDates.length > 0 ? shortDates : ['기록없음'],
+                    datasets: [
+                        {
+                            label: '달리기 (km)',
+                            data: runData.length > 0 ? runData : [0],
+                            backgroundColor: 'rgba(37, 99, 235, 0.7)',
+                            borderRadius: 4
+                        },
+                        {
+                            label: '푸시업 (개)',
+                            data: pushupData.length > 0 ? pushupData : [0],
+                            backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                            borderRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    interaction: { mode: 'index', intersect: false },
+                    scales: { 
+                        y: { beginAtZero: true, grid: { borderDash: [2, 4] } },
+                        x: { grid: { display: false } }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
