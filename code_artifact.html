@@ -1,1285 +1,896 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>째깍째깍! 즐거운 시계 읽기 박사</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts: Jua & Gowun Dodum for friendly Korean elementary UI -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
-    <!-- Tone.js for cheerful sound effects without external audio files -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>나의 활동 성향 알아보기 | 초등 활동 성향 분석 앱</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Noto Sans KR Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background-color: #f4f7fb;
+      color: #1e293b;
+    }
 
-    <style>
-        :root {
-            --hour-color: #FF595E;
-            --minute-color: #1982C4;
-            --clock-border: #FFCA3A;
-        }
+    /* 커스텀 스크롤바 */
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 999px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 999px;
+    }
 
-        body {
-            font-family: 'Gowun Dodum', sans-serif;
-            background: linear-gradient(135deg, #FFFDF2 0%, #E8F6FF 100%);
-            min-height: 100vh;
-            user-select: none;
-            overflow-x: hidden;
-        }
+    /* 4점 척도 라디오 버튼 커스텀 스타일 */
+    .scale-radio:checked + label {
+      border-color: #4f46e5;
+      background-color: #eef2ff;
+      color: #4338ca;
+      font-weight: 700;
+      box-shadow: 0 2px 8px rgba(79, 70, 229, 0.15);
+    }
 
-        .font-jua {
-            font-family: 'Jua', sans-serif;
-        }
-
-        /* Smooth Clock Hand Rotation */
-        .clock-hand {
-            transition: transform 0.65s cubic-bezier(0.34, 1.56, 0.64, 1);
-            transform-origin: 200px 200px;
-        }
-
-        .clock-hand.no-transition {
-            transition: none !important;
-        }
-
-        /* 3D Kid-Friendly Button Press Effect */
-        .btn-3d {
-            transition: all 0.12s ease;
-            box-shadow: 0 5px 0 rgba(0, 0, 0, 0.16);
-        }
-        .btn-3d:active:not(:disabled) {
-            transform: translateY(4px);
-            box-shadow: 0 1px 0 rgba(0, 0, 0, 0.16);
-        }
-
-        /* Floating Balloons Animation */
-        @keyframes floatUp {
-            0% {
-                transform: translateY(105vh) rotate(-6deg) scale(0.8);
-                opacity: 1;
-            }
-            50% {
-                transform: translateY(50vh) rotate(6deg) scale(1);
-                opacity: 1;
-            }
-            100% {
-                transform: translateY(-25vh) rotate(-6deg) scale(1.05);
-                opacity: 0;
-            }
-        }
-
-        .balloon-item {
-            position: fixed;
-            bottom: -120px;
-            z-index: 60;
-            pointer-events: none;
-            animation: floatUp 2.4s ease-in forwards;
-        }
-
-        /* Shake Animation for Wrong Answer */
-        @keyframes gentleShake {
-            0%, 100% { transform: translateX(0); }
-            20%, 60% { transform: translateX(-8px); }
-            40%, 80% { transform: translateX(8px); }
-        }
-        .shake {
-            animation: gentleShake 0.45s ease-in-out;
-        }
-
-        /* Custom Input Number Styling */
-        input[type=number]::-webkit-inner-spin-button, 
-        input[type=number]::-webkit-outer-spin-button { 
-            -webkit-appearance: none; 
-            margin: 0; 
-        }
-        input[type=number] {
-            -moz-appearance: textfield;
-        }
-
-        /* Pulse highlight for active hints */
-        @keyframes pulseGlow {
-            0%, 100% { opacity: 0.35; }
-            50% { opacity: 0.75; }
-        }
-        .sector-glow {
-            animation: pulseGlow 1.5s infinite ease-in-out;
-        }
-    </style>
+    /* PDF 인쇄 전용 스타일 (@media print) */
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 14mm;
+      }
+      body {
+        background-color: #ffffff !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      #dashboardView {
+        display: block !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
+      }
+      #reportContainer {
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        width: 100% !important;
+      }
+      .print-grid-2 {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 16px !important;
+      }
+      .print-break-avoid {
+        break-inside: avoid;
+      }
+    }
+  </style>
 </head>
-<body class="text-slate-800 pb-12">
+<body class="min-h-screen flex flex-col">
 
-    <!-- Celebration Overlay (Fireworks Canvas + Floating Balloons Container) -->
-    <canvas id="confettiCanvas" class="fixed inset-0 pointer-events-none z-50 w-full h-full"></canvas>
-    <div id="balloonContainer" class="fixed inset-0 pointer-events-none z-50 overflow-hidden"></div>
-
-    <!-- Top Header & Scoreboard Bar -->
-    <header class="max-w-6xl mx-auto pt-4 px-4 sm:px-6">
-        <div class="bg-white/90 backdrop-blur-md border-4 border-amber-300 rounded-3xl p-4 shadow-lg flex flex-col lg:flex-row items-center justify-between gap-4">
-            
-            <!-- App Title & Mascot Badge -->
-            <div class="flex items-center gap-3">
-                <div class="w-14 h-14 rounded-2xl bg-amber-400 flex items-center justify-center text-3xl shadow-inner border-2 border-amber-500">
-                    ⏰
-                </div>
-                <div>
-                    <div class="flex items-center gap-2">
-                        <span class="bg-indigo-100 text-indigo-700 text-xs font-bold px-2.5 py-0.5 rounded-full">초등 1~2학년 수학 교구</span>
-                        <span class="bg-amber-100 text-amber-800 text-xs font-bold px-2.5 py-0.5 rounded-full">시계 읽기 연습</span>
-                    </div>
-                    <h1 class="font-jua text-2xl sm:text-3xl text-slate-800 tracking-wide mt-0.5">
-                        째깍째깍! 시계 읽기 박사님
-                    </h1>
-                </div>
-            </div>
-
-            <!-- Scoreboard Stats (총 문제, 맞춘 정답의 수, 오답의 수) -->
-            <div class="flex flex-wrap items-center justify-center gap-2 sm:gap-3 w-full lg:w-auto">
-                <div class="bg-slate-100 border-2 border-slate-200 rounded-2xl px-4 py-2 flex items-center gap-2.5">
-                    <span class="text-xl">📝</span>
-                    <div>
-                        <p class="text-xs text-slate-500 font-bold">총 문제</p>
-                        <p id="statTotal" class="font-jua text-xl text-slate-800 leading-none">0</p>
-                    </div>
-                </div>
-
-                <div class="bg-emerald-50 border-2 border-emerald-200 rounded-2xl px-4 py-2 flex items-center gap-2.5">
-                    <span class="text-xl">⭕</span>
-                    <div>
-                        <p class="text-xs text-emerald-600 font-bold">맞춘 정답</p>
-                        <p id="statCorrect" class="font-jua text-xl text-emerald-600 leading-none">0</p>
-                    </div>
-                </div>
-
-                <div class="bg-rose-50 border-2 border-rose-200 rounded-2xl px-4 py-2 flex items-center gap-2.5">
-                    <span class="text-xl">❌</span>
-                    <div>
-                        <p class="text-xs text-rose-500 font-bold">아쉬운 오답</p>
-                        <p id="statWrong" class="font-jua text-xl text-rose-500 leading-none">0</p>
-                    </div>
-                </div>
-
-                <!-- Sound Toggle & Score Reset -->
-                <div class="flex items-center gap-1.5">
-                    <button id="btnSoundToggle" onclick="toggleSound()" title="효과음 켜기/끄기"
-                        class="btn-3d bg-sky-100 hover:bg-sky-200 text-sky-700 border-2 border-sky-300 rounded-2xl p-2.5 text-lg font-bold">
-                        🔊
-                    </button>
-                    <button onclick="resetStats()" title="기록 초기화"
-                        class="btn-3d bg-slate-100 hover:bg-slate-200 text-slate-600 border-2 border-slate-300 rounded-2xl px-3 py-2 text-xs font-bold">
-                        기록 초기화
-                    </button>
-                </div>
-            </div>
+  <!-- 상단 네비게이션 바 -->
+  <header class="no-print bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-lg font-extrabold shadow-sm">
+          ★
         </div>
-    </header>
-
-    <!-- Difficulty Level Selector Tabs -->
-    <section class="max-w-6xl mx-auto mt-5 px-4 sm:px-6">
-        <div class="bg-white/80 rounded-3xl p-3 border-2 border-sky-200 shadow-sm">
-            <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
-                <button onclick="setDifficulty(1)" id="tabLevel1"
-                    class="level-tab btn-3d rounded-2xl py-3 px-3 font-jua text-base sm:text-lg border-2 flex flex-col items-center justify-center gap-0.5 bg-amber-400 text-slate-900 border-amber-500">
-                    <span>🌱 1단계: 정시</span>
-                    <span class="text-xs font-sans font-bold opacity-80">~시 (00분)</span>
-                </button>
-                <button onclick="setDifficulty(2)" id="tabLevel2"
-                    class="level-tab btn-3d rounded-2xl py-3 px-3 font-jua text-base sm:text-lg border-2 flex flex-col items-center justify-center gap-0.5 bg-white text-slate-600 border-slate-200 hover:bg-amber-50">
-                    <span>🌿 2단계: 30분 단위</span>
-                    <span class="text-xs font-sans font-bold opacity-75">정시 / 30분</span>
-                </button>
-                <button onclick="setDifficulty(3)" id="tabLevel3"
-                    class="level-tab btn-3d rounded-2xl py-3 px-3 font-jua text-base sm:text-lg border-2 flex flex-col items-center justify-center gap-0.5 bg-white text-slate-600 border-slate-200 hover:bg-amber-50">
-                    <span>🌷 3단계: 5분 단위</span>
-                    <span class="text-xs font-sans font-bold opacity-75">5분, 10분, 15분...</span>
-                </button>
-                <button onclick="setDifficulty(4)" id="tabLevel4"
-                    class="level-tab btn-3d rounded-2xl py-3 px-3 font-jua text-base sm:text-lg border-2 flex flex-col items-center justify-center gap-0.5 bg-white text-slate-600 border-slate-200 hover:bg-amber-50">
-                    <span>👑 4단계: 1분 단위</span>
-                    <span class="text-xs font-sans font-bold opacity-75">모든 눈금 읽기</span>
-                </button>
-                <button onclick="setExploreMode()" id="tabExplore"
-                    class="level-tab btn-3d col-span-2 sm:col-span-1 rounded-2xl py-3 px-3 font-jua text-base sm:text-lg border-2 flex flex-col items-center justify-center gap-0.5 bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100">
-                    <span>🔍 원리 실험실</span>
-                    <span class="text-xs font-sans font-bold opacity-80">바늘 직접 돌려보기</span>
-                </button>
-            </div>
+        <div>
+          <h1 class="text-base sm:text-lg font-extrabold text-slate-800 leading-tight">나의 활동 성향 알아보기</h1>
+          <p class="text-[11px] sm:text-xs text-slate-500 hidden sm:block">초등학생 맞춤형 활동 성향 진단 &amp; 교사용 분석 리포트</p>
         </div>
+      </div>
+
+      <!-- 탭 전환 버튼 -->
+      <nav class="flex items-center bg-slate-100 p-1 rounded-xl">
+        <button id="tabSurveyBtn" onclick="switchTab('survey')" class="px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-all">
+          📝 학생용 설문
+        </button>
+        <button id="tabDashboardBtn" onclick="switchTab('dashboard')" class="px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-all">
+          📊 교사용 분석표
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- 메인 콘텐츠 영역 -->
+  <main class="flex-1 w-full">
+
+    <!-- ==================== 1. 학생용 설문 (SURVEY) ==================== -->
+    <section id="surveyView" class="no-print max-w-3xl mx-auto px-4 py-6 sm:py-10">
+
+      <!-- 1-1. 학생 로그인 화면 -->
+      <div id="studentLoginCard" class="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 sm:p-10">
+        <div class="text-center mb-8">
+          <span class="inline-block px-3.5 py-1 rounded-full bg-indigo-50 text-indigo-600 text-xs font-bold mb-3">
+            초등 5학년 눈높이 자기보고형 검사
+          </span>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-2">반가워요! 나의 성향을 찾아볼까요?</h2>
+          <p class="text-sm sm:text-base text-slate-500 leading-relaxed">
+            내가 어떤 활동을 좋아하고 잘하는지 20개의 짧은 질문으로 알아보는 시간이에요.<br class="hidden sm:inline">
+            이름과 선생님이 알려준 입장 암호를 입력하고 시작해 보세요.
+          </p>
+        </div>
+
+        <div class="max-w-md mx-auto space-y-4">
+          <div>
+            <label for="inputStudentName" class="block text-sm font-bold text-slate-700 mb-1.5">이름</label>
+            <input type="text" id="inputStudentName" placeholder="예: 김민수" autocomplete="off"
+              class="w-full px-4 py-3.5 rounded-2xl border-2 border-slate-200 focus:border-indigo-500 focus:outline-none text-base transition-colors">
+          </div>
+          <div>
+            <label for="inputStudentPw" class="block text-sm font-bold text-slate-700 mb-1.5">입장 암호</label>
+            <input type="password" id="inputStudentPw" placeholder="암호 4자리 입력 (힌트: 2026)" autocomplete="off"
+              class="w-full px-4 py-3.5 rounded-2xl border-2 border-slate-200 focus:border-indigo-500 focus:outline-none text-base transition-colors"
+              onkeydown="if(event.key==='Enter') handleStudentLogin()">
+          </div>
+
+          <!-- 에러 안내 메시지 -->
+          <div id="loginErrorBox" class="hidden rounded-xl bg-rose-50 border border-rose-200 px-4 py-3 text-sm font-semibold text-rose-600">
+          </div>
+
+          <button onclick="handleStudentLogin()"
+            class="w-full py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-bold text-base shadow-md shadow-indigo-200 transition-all">
+            설문 시작하기 →
+          </button>
+        </div>
+      </div>
+
+      <!-- 1-2. 20문항 설문 진행 화면 -->
+      <div id="studentSurveyArea" class="hidden">
+        <!-- 상단 고정 진행률 바 -->
+        <div class="sticky top-[72px] z-30 bg-white/95 backdrop-blur-md border border-slate-200 rounded-2xl p-4 mb-6 shadow-sm">
+          <div class="flex items-center justify-between text-sm font-bold mb-2">
+            <span id="surveyStudentBadge" class="text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full text-xs sm:text-sm"></span>
+            <span id="surveyProgressText" class="text-slate-700">0 / 20 문항 완료</span>
+          </div>
+          <div class="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
+            <div id="surveyProgressBar" class="h-full bg-gradient-to-r from-indigo-500 to-sky-400 rounded-full transition-all duration-300" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- 문항 리스트 렌더링 컨테이너 -->
+        <div id="questionsWrapper" class="space-y-6"></div>
+
+        <!-- 하단 제출 영역 -->
+        <div class="mt-8 bg-white rounded-3xl border border-slate-200 p-6 shadow-sm text-center">
+          <p id="submitStatusHint" class="text-sm font-semibold text-slate-500 mb-4">
+            아직 체크하지 않은 문항이 <span class="text-indigo-600 font-extrabold">20개</span> 남았어요. 모든 문항에 체크해야 제출할 수 있어요!
+          </p>
+          <button id="btnSubmitSurvey" disabled onclick="handleSurveySubmit()"
+            class="w-full sm:w-auto sm:min-w-[260px] px-8 py-4 rounded-2xl font-bold text-base transition-all disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-200 disabled:shadow-none">
+            제출 결과 보기
+          </button>
+        </div>
+      </div>
+
+      <!-- 1-3. 설문 제출 완료 화면 -->
+      <div id="studentCompleteCard" class="hidden bg-white rounded-3xl shadow-sm border border-slate-200 p-6 sm:p-10 text-center">
+        <div class="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-3xl mx-auto mb-4">
+          🎉
+        </div>
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-2">설문 제출 완료!</h2>
+        <p id="completeSubtitle" class="text-sm sm:text-base text-slate-500 mb-6"></p>
+
+        <!-- 대표 성향 배지 -->
+        <div class="inline-flex flex-col items-center bg-indigo-50 border border-indigo-100 rounded-2xl px-6 py-4 mb-6">
+          <span class="text-xs font-bold text-indigo-500 mb-1">나의 대표 활동 성향</span>
+          <span id="completeTypeBadge" class="text-xl sm:text-2xl font-extrabold text-indigo-700"></span>
+          <span id="completeTypeNick" class="text-xs sm:text-sm font-medium text-slate-600 mt-1"></span>
+        </div>
+
+        <!-- 4개 영역 점수 카드 -->
+        <div id="completeScoreCards" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6"></div>
+
+        <!-- 응원 메시지 -->
+        <div id="completeEncourageBox" class="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-sm text-amber-900 font-medium leading-relaxed mb-8">
+        </div>
+
+        <!-- 액션 버튼 -->
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+          <button onclick="resetSurveyFlow()"
+            class="w-full sm:w-auto px-6 py-3.5 rounded-2xl border-2 border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-sm transition-colors">
+            🔄 새로 설문하기
+          </button>
+          <button onclick="goToDashboardWithLatest()"
+            class="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-200 transition-colors">
+            📊 교사용 분석표에서 확인하기
+          </button>
+        </div>
+      </div>
     </section>
 
-    <!-- Main Interactive Workspace -->
-    <main class="max-w-6xl mx-auto mt-6 px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+    <!-- ==================== 2. 교사용 분석표 (DASHBOARD) ==================== -->
+    <section id="dashboardView" class="hidden max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
 
-        <!-- Left Column: Analog Clock Visual (7 cols on large screens) -->
-        <div class="lg:col-span-7 bg-white rounded-3xl border-4 border-sky-200 shadow-xl p-4 sm:p-6 flex flex-col items-center relative">
-            
-            <!-- Top Controls on Clock Card (Scaffolding Helpers) -->
-            <div class="w-full flex flex-wrap items-center justify-between gap-2 mb-2">
-                <!-- Hand Color Legend -->
-                <div class="flex items-center gap-3 bg-slate-50 px-3.5 py-1.5 rounded-2xl border border-slate-200">
-                    <div class="flex items-center gap-1.5">
-                        <span class="w-4 h-2.5 rounded-full bg-[#FF595E] inline-block"></span>
-                        <span class="text-xs sm:text-sm font-bold text-rose-600">짧은바늘 = 시침(시)</span>
-                    </div>
-                    <span class="text-slate-300">|</span>
-                    <div class="flex items-center gap-1.5">
-                        <span class="w-5 h-2 rounded-full bg-[#1982C4] inline-block"></span>
-                        <span class="text-xs sm:text-sm font-bold text-sky-700">긴바늘 = 분침(분)</span>
-                    </div>
-                </div>
+      <!-- 상단 타이틀 및 PDF 버튼 -->
+      <div class="no-print flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h2 class="text-xl sm:text-2xl font-extrabold text-slate-800">학급 활동 성향 분석 대시보드</h2>
+          <p class="text-xs sm:text-sm text-slate-500 mt-0.5">학생별 성향 리포트를 조회하고 모둠 구성 및 상담 자료(PDF)로 활용하세요.</p>
+        </div>
+        <div class="flex items-center gap-2.5">
+          <button onclick="renderDashboard()"
+            class="px-4 py-2.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs sm:text-sm font-bold transition-colors">
+            🔄 새로고침
+          </button>
+          <button id="btnPrintPdf" disabled onclick="window.print()"
+            class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-xs sm:text-sm font-bold shadow-sm transition-colors">
+            🖨️ 리포트 PDF 저장
+          </button>
+        </div>
+      </div>
 
-                <!-- Scaffolding Helper Toggles -->
-                <div class="flex items-center gap-2">
-                    <button id="btnToggleMinNumbers" onclick="toggleMinuteHelpers()"
-                        class="btn-3d text-xs sm:text-sm font-bold px-3 py-1.5 rounded-xl border-2 bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100 flex items-center gap-1">
-                        <span>🔢</span> <span id="txtMinHelper">바깥 분(5~60) 보기</span>
-                    </button>
-                    <button id="btnToggleSector" onclick="toggleHourSector()"
-                        class="btn-3d text-xs sm:text-sm font-bold px-3 py-1.5 rounded-xl border-2 bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100 flex items-center gap-1">
-                        <span>🍕</span> <span id="txtSectorHelper">시침 영역 색칠</span>
-                    </button>
-                </div>
-            </div>
+      <!-- 학급 전체 요약 카드 (5개) -->
+      <div class="no-print grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm col-span-2 sm:col-span-1">
+          <span class="text-xs font-bold text-slate-400">총 응답 학생</span>
+          <div id="summaryTotal" class="text-2xl font-extrabold text-slate-800 mt-1">0명</div>
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+          <span class="text-xs font-bold text-sky-600">🔍 탐구 평균</span>
+          <div id="summaryInquiry" class="text-xl font-extrabold text-slate-800 mt-1">0.0 <span class="text-xs font-medium text-slate-400">/ 20</span></div>
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+          <span class="text-xs font-bold text-violet-600">🎨 표현 평균</span>
+          <div id="summaryExpression" class="text-xl font-extrabold text-slate-800 mt-1">0.0 <span class="text-xs font-medium text-slate-400">/ 20</span></div>
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+          <span class="text-xs font-bold text-emerald-600">🤝 협력 평균</span>
+          <div id="summaryCooperation" class="text-xl font-extrabold text-slate-800 mt-1">0.0 <span class="text-xs font-medium text-slate-400">/ 20</span></div>
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+          <span class="text-xs font-bold text-amber-600">📅 계획 평균</span>
+          <div id="summaryPlanning" class="text-xl font-extrabold text-slate-800 mt-1">0.0 <span class="text-xs font-medium text-slate-400">/ 20</span></div>
+        </div>
+      </div>
 
-            <!-- Interactive SVG Analog Clock -->
-            <div class="w-full max-w-[420px] aspect-square relative flex items-center justify-center my-1">
-                <svg id="analogClockSvg" viewBox="0 0 400 400" class="w-full h-full drop-shadow-md">
-                    <defs>
-                        <!-- Soft Inner Shadow for Clock Face -->
-                        <radialGradient id="faceGrad" cx="50%" cy="50%" r="50%">
-                            <stop offset="85%" stop-color="#FFFFFF" />
-                            <stop offset="100%" stop-color="#FFF8E7" />
-                        </radialGradient>
-                        <!-- Drop shadow for hands -->
-                        <filter id="handShadow" x="-20%" y="-20%" width="140%" height="140%">
-                            <feDropShadow dx="1" dy="2" stdDeviation="2" flood-opacity="0.22"/>
-                        </filter>
-                    </defs>
+      <!-- 메인 2단 레이아웃: 좌측 학생 목록 / 우측 개별 리포트 -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
-                    <!-- Outer Clock Frame / Bezel -->
-                    <circle cx="200" cy="200" r="190" fill="#FFCA3A" stroke="#F59E0B" stroke-width="6"/>
-                    <circle cx="200" cy="200" r="174" fill="url(#faceGrad)" stroke="#FDE68A" stroke-width="4"/>
+        <!-- 좌측: 학생 목록 사이드바 -->
+        <aside class="no-print lg:col-span-4 bg-white rounded-3xl border border-slate-200 p-5 shadow-sm">
+          <div class="mb-3">
+            <input type="text" id="studentSearchInput" oninput="renderStudentList()" placeholder="학생 이름 검색..."
+              class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 focus:outline-none text-sm">
+          </div>
+          <div id="studentListContainer" class="space-y-2.5 max-h-[560px] overflow-y-auto custom-scroll pr-1">
+            <!-- 학생 목록 렌더링 -->
+          </div>
+        </aside>
 
-                    <!-- Dynamic Hour Sector Highlight (Shows which hour zone the short hand is in) -->
-                    <path id="hourSectorPath" d="" fill="#FFE3E3" class="sector-glow hidden" />
-
-                    <!-- Dynamic Minute Arc Progress from 12 o'clock -->
-                    <path id="minuteArcPath" d="" fill="none" stroke="#BAE6FD" stroke-width="8" stroke-linecap="round" class="hidden" />
-
-                    <!-- 60 Minute Ticks Group (Populated via JS) -->
-                    <g id="clockTicksGroup"></g>
-
-                    <!-- Outer Small Minute Helper Numbers (5, 10, 15...60) Group -->
-                    <g id="minuteHelperNumbersGroup" class="hidden"></g>
-
-                    <!-- Main 1~12 Hour Numbers Group (Populated via JS) -->
-                    <g id="hourNumbersGroup"></g>
-
-                    <!-- Subtle Dashed Guide Line for Hour Hand Position (Visible on Hint or Explore) -->
-                    <g id="hourGuideGroup" class="clock-hand hidden">
-                        <line x1="200" y1="200" x2="200" y2="42" stroke="#FF595E" stroke-width="2" stroke-dasharray="5,5" opacity="0.65" />
-                    </g>
-
-                    <!-- MINUTE HAND (긴바늘 - 분침) -->
-                    <g id="minuteHandGroup" class="clock-hand" filter="url(#handShadow)">
-                        <!-- Tail -->
-                        <line x1="200" y1="222" x2="200" y2="200" stroke="#1982C4" stroke-width="7" stroke-linecap="round"/>
-                        <!-- Main shaft -->
-                        <line x1="200" y1="200" x2="200" y2="54" stroke="#1982C4" stroke-width="7" stroke-linecap="round"/>
-                        <!-- Pointer arrow tip -->
-                        <polygon points="200,42 192,60 208,60" fill="#1982C4" />
-                        <!-- Label Badge on Hand -->
-                        <rect x="186" y="96" width="28" height="18" rx="6" fill="#1982C4" />
-                        <text x="200" y="109" text-anchor="middle" fill="#FFFFFF" font-size="11" font-weight="bold" font-family="'Jua', sans-serif">분</text>
-                    </g>
-
-                    <!-- HOUR HAND (짧은바늘 - 시침) -->
-                    <g id="hourHandGroup" class="clock-hand" filter="url(#handShadow)">
-                        <!-- Tail -->
-                        <line x1="200" y1="218" x2="200" y2="200" stroke="#FF595E" stroke-width="11" stroke-linecap="round"/>
-                        <!-- Main shaft -->
-                        <line x1="200" y1="200" x2="200" y2="96" stroke="#FF595E" stroke-width="11" stroke-linecap="round"/>
-                        <!-- Pointer arrow tip -->
-                        <polygon points="200,82 189,102 211,102" fill="#FF595E" />
-                        <!-- Label Badge on Hand -->
-                        <rect x="185" y="128" width="30" height="20" rx="7" fill="#FF595E" />
-                        <text x="200" y="142" text-anchor="middle" fill="#FFFFFF" font-size="12" font-weight="bold" font-family="'Jua', sans-serif">시</text>
-                    </g>
-
-                    <!-- Center Pin Cap -->
-                    <circle cx="200" cy="200" r="12" fill="#FFCA3A" stroke="#F59E0B" stroke-width="3"/>
-                    <circle cx="200" cy="200" r="5" fill="#FFFFFF"/>
-                </svg>
-            </div>
-
-            <!-- Proportional Angle Status Bar (Real-time visual explanation of hour hand movement) -->
-            <div class="w-full bg-amber-50/90 border-2 border-amber-200 rounded-2xl p-3 text-center">
-                <p id="clockLivePrincipleText" class="text-sm sm:text-base font-bold text-amber-900">
-                    💡 짧은바늘(시침)은 긴바늘(분침)이 움직인 만큼 다음 숫자를 향해 조금씩 이동해요!
-                </p>
-            </div>
+        <!-- 우측: 개별 학생 상세 리포트 (PDF 인쇄 대상) -->
+        <div id="reportContainer" class="lg:col-span-8 bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm min-h-[520px]">
+          <div class="h-full flex flex-col items-center justify-center text-center py-20 text-slate-400">
+            <div class="text-4xl mb-3">📋</div>
+            <p class="font-semibold text-sm">왼쪽 목록에서 학생을 선택하면 상세 활동 성향 리포트가 표시됩니다.</p>
+          </div>
         </div>
 
-        <!-- Right Column: Question, Input Controls, Feedback & Mode Panel (5 cols on large screens) -->
-        <div class="lg:col-span-5 flex flex-col gap-5">
+      </div>
+    </section>
 
-            <!-- QUIZ MODE PANEL -->
-            <div id="quizPanel" class="bg-white rounded-3xl border-4 border-amber-300 shadow-xl p-5 sm:p-6 flex flex-col gap-5">
-                
-                <!-- Question Header -->
-                <div class="flex items-center justify-between border-b-2 border-amber-100 pb-3">
-                    <div>
-                        <span id="badgeDifficulty" class="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full">
-                            🌱 1단계: 정시 읽기
-                        </span>
-                        <h2 class="font-jua text-2xl sm:text-3xl text-slate-800 mt-1">
-                            지금 시계는 몇 시 몇 분일까요?
-                        </h2>
-                    </div>
-                    <button onclick="generateRandomQuestion(true)" title="다른 문제 내기"
-                        class="btn-3d bg-slate-100 hover:bg-slate-200 text-slate-700 border-2 border-slate-300 rounded-2xl px-3 py-2 text-xs sm:text-sm font-bold flex items-center gap-1 shrink-0">
-                        <span>🔄</span> <span>새 문제</span>
-                    </button>
-                </div>
+  </main>
 
-                <!-- Hour (시) and Minute (분) Input Box with Kid-Friendly Steppers -->
-                <div id="inputCardContainer" class="grid grid-cols-2 gap-3 sm:gap-4">
-                    
-                    <!-- HOUR (시) Input Box -->
-                    <div class="bg-rose-50 border-3 border-rose-200 rounded-3xl p-3.5 flex flex-col items-center">
-                        <div class="flex items-center gap-1.5 mb-2">
-                            <span class="w-3.5 h-3.5 rounded-full bg-[#FF595E]"></span>
-                            <span class="font-jua text-lg text-rose-600">짧은바늘 (시)</span>
-                        </div>
-                        <div class="flex items-center gap-1.5 w-full justify-center">
-                            <button type="button" onclick="stepInput('hour', -1)"
-                                class="btn-3d w-10 h-12 rounded-2xl bg-white border-2 border-rose-300 text-rose-600 font-jua text-2xl flex items-center justify-center hover:bg-rose-100">
-                                -
-                            </button>
-                            <input id="inputHour" type="number" min="1" max="12" placeholder="?"
-                                onclick="setActiveInput('hour')"
-                                onfocus="setActiveInput('hour')"
-                                class="w-20 h-14 text-center font-jua text-3xl sm:text-4xl bg-white border-3 border-rose-400 rounded-2xl text-slate-800 focus:outline-none focus:ring-4 focus:ring-rose-200" />
-                            <button type="button" onclick="stepInput('hour', 1)"
-                                class="btn-3d w-10 h-12 rounded-2xl bg-white border-2 border-rose-300 text-rose-600 font-jua text-2xl flex items-center justify-center hover:bg-rose-100">
-                                +
-                            </button>
-                        </div>
-                        <span class="font-jua text-xl text-rose-700 mt-1.5">시 (1~12)</span>
-                    </div>
+  <script>
+    /* =====================================================================
+     * 1. 상수 및 문항/유형 데이터 정의
+     * ===================================================================== */
+    const STORAGE_KEY = 'elem_activity_tendency_v1';
+    const ENTRY_PASSWORD = '2026';
 
-                    <!-- MINUTE (분) Input Box -->
-                    <div class="bg-sky-50 border-3 border-sky-200 rounded-3xl p-3.5 flex flex-col items-center">
-                        <div class="flex items-center gap-1.5 mb-2">
-                            <span class="w-3.5 h-3.5 rounded-full bg-[#1982C4]"></span>
-                            <span class="font-jua text-lg text-sky-700">긴바늘 (분)</span>
-                        </div>
-                        <div class="flex items-center gap-1.5 w-full justify-center">
-                            <button type="button" onclick="stepInput('minute', -1)"
-                                class="btn-3d w-10 h-12 rounded-2xl bg-white border-2 border-sky-300 text-sky-700 font-jua text-2xl flex items-center justify-center hover:bg-sky-100">
-                                -
-                            </button>
-                            <input id="inputMinute" type="number" min="0" max="59" placeholder="?"
-                                onclick="setActiveInput('minute')"
-                                onfocus="setActiveInput('minute')"
-                                class="w-20 h-14 text-center font-jua text-3xl sm:text-4xl bg-white border-3 border-sky-400 rounded-2xl text-slate-800 focus:outline-none focus:ring-4 focus:ring-sky-200" />
-                            <button type="button" onclick="stepInput('minute', 1)"
-                                class="btn-3d w-10 h-12 rounded-2xl bg-white border-2 border-sky-300 text-sky-700 font-jua text-2xl flex items-center justify-center hover:bg-sky-100">
-                                +
-                            </button>
-                        </div>
-                        <span class="font-jua text-xl text-sky-800 mt-1.5">분 (0~59)</span>
-                    </div>
-                </div>
+    // 초등 5학년 눈높이 20문항 (탐구 1~5, 표현 6~10, 협력 11~15, 계획 16~20)
+    const QUESTIONS = [
+      // 탐구 성향 (1~5)
+      { id: 1, domain: '탐구', text: '나는 모르는 단어나 궁금한 점이 생기면 바로 찾아보는 것을 좋아한다.' },
+      { id: 2, domain: '탐구', text: '나는 수학 문제나 퍼즐처럼 머리를 써서 해결하는 활동을 좋아한다.' },
+      { id: 3, domain: '탐구', text: '나는 실험을 하거나 자연을 관찰하며 원리를 알아내는 것이 재미있다.' },
+      { id: 4, domain: '탐구', text: '나는 공부할 때 "왜 그럴까?" 하고 이유를 끝까지 생각해 보는 편이다.' },
+      { id: 5, domain: '탐구', text: '나는 책이나 과학 영상을 보며 새로운 지식을 배우는 것을 좋아한다.' },
 
-                <!-- Quick Preset Helper Buttons for Touch/Tablet Convenience -->
-                <div class="bg-slate-50 rounded-2xl p-3 border border-slate-200">
-                    <div class="flex items-center justify-between mb-1.5">
-                        <span id="quickPadLabel" class="text-xs font-bold text-slate-500">
-                            ⚡ 빠른 숫자 버튼 (시/분 칸을 누르거나 바로 선택하세요)
-                        </span>
-                    </div>
-                    <!-- Quick Hour Row (1~12) -->
-                    <div class="mb-2">
-                        <span class="text-[11px] font-bold text-rose-500 block mb-1">시(짧은바늘) 바로 선택:</span>
-                        <div class="grid grid-cols-6 gap-1.5">
-                            <button onclick="setQuickValue('hour', 1)" class="btn-3d bg-white hover:bg-rose-50 border border-rose-200 rounded-xl py-1.5 font-jua text-sm text-rose-700">1시</button>
-                            <button onclick="setQuickValue('hour', 2)" class="btn-3d bg-white hover:bg-rose-50 border border-rose-200 rounded-xl py-1.5 font-jua text-sm text-rose-700">2시</button>
-                            <button onclick="setQuickValue('hour', 3)" class="btn-3d bg-white hover:bg-rose-50 border border-rose-200 rounded-xl py-1.5 font-jua text-sm text-rose-700">3시</button>
-                            <button onclick="setQuickValue('hour', 4)" class="btn-3d bg-white hover:bg-rose-50 border border-rose-200 rounded-xl py-1.5 font-jua text-sm text-rose-700">4시</button>
-                            <button onclick="setQuickValue('hour', 5)" class="btn-3d bg-white hover:bg-rose-50 border border-rose-200 rounded-xl py-1.5 font-jua text-sm text-rose-700">5시</button>
-                            <button onclick="setQuickValue('hour', 6)" class="btn-3d bg-white hover:bg-rose-50 border border-rose-200 rounded-xl py-1.5 font-jua text-sm text-rose-700">6시</button>
-                            <button onclick="setQuickValue('hour', 7)" class="btn-3d bg-white hover:bg-rose-50 border border-rose-200 rounded-xl py-1.5 font-jua text-sm text-rose-700">7시</button>
-                            <button onclick="setQuickValue('hour', 8)" class="btn-3d bg-white hover:bg-rose-50 border border-rose-200 rounded-xl py-1.5 font-jua text-sm text-rose-700">8시</button>
-                            <button onclick="setQuickValue('hour', 9)" class="btn-3d bg-white hover:bg-rose-50 border border-rose-200 rounded-xl py-1.5 font-jua text-sm text-rose-700">9시</button>
-                            <button onclick="setQuickValue('hour', 10)" class="btn-3d bg-white hover:bg-rose-50 border border-rose-200 rounded-xl py-1.5 font-jua text-sm text-rose-700">10시</button>
-                            <button onclick="setQuickValue('hour', 11)" class="btn-3d bg-white hover:bg-rose-50 border border-rose-200 rounded-xl py-1.5 font-jua text-sm text-rose-700">11시</button>
-                            <button onclick="setQuickValue('hour', 12)" class="btn-3d bg-white hover:bg-rose-50 border border-rose-200 rounded-xl py-1.5 font-jua text-sm text-rose-700">12시</button>
-                        </div>
-                    </div>
-                    <!-- Quick Minute Row (0, 5, 10 ... 55) -->
-                    <div>
-                        <span class="text-[11px] font-bold text-sky-600 block mb-1">분(긴바늘) 5분 단위 바로 선택:</span>
-                        <div class="grid grid-cols-6 gap-1.5">
-                            <button onclick="setQuickValue('minute', 0)" class="btn-3d bg-white hover:bg-sky-50 border border-sky-200 rounded-xl py-1.5 font-jua text-sm text-sky-700">0분</button>
-                            <button onclick="setQuickValue('minute', 5)" class="btn-3d bg-white hover:bg-sky-50 border border-sky-200 rounded-xl py-1.5 font-jua text-sm text-sky-700">5분</button>
-                            <button onclick="setQuickValue('minute', 10)" class="btn-3d bg-white hover:bg-sky-50 border border-sky-200 rounded-xl py-1.5 font-jua text-sm text-sky-700">10분</button>
-                            <button onclick="setQuickValue('minute', 15)" class="btn-3d bg-white hover:bg-sky-50 border border-sky-200 rounded-xl py-1.5 font-jua text-sm text-sky-700">15분</button>
-                            <button onclick="setQuickValue('minute', 20)" class="btn-3d bg-white hover:bg-sky-50 border border-sky-200 rounded-xl py-1.5 font-jua text-sm text-sky-700">20분</button>
-                            <button onclick="setQuickValue('minute', 25)" class="btn-3d bg-white hover:bg-sky-50 border border-sky-200 rounded-xl py-1.5 font-jua text-sm text-sky-700">25분</button>
-                            <button onclick="setQuickValue('minute', 30)" class="btn-3d bg-white hover:bg-sky-50 border border-sky-200 rounded-xl py-1.5 font-jua text-sm text-sky-700">30분</button>
-                            <button onclick="setQuickValue('minute', 35)" class="btn-3d bg-white hover:bg-sky-50 border border-sky-200 rounded-xl py-1.5 font-jua text-sm text-sky-700">35분</button>
-                            <button onclick="setQuickValue('minute', 40)" class="btn-3d bg-white hover:bg-sky-50 border border-sky-200 rounded-xl py-1.5 font-jua text-sm text-sky-700">40분</button>
-                            <button onclick="setQuickValue('minute', 45)" class="btn-3d bg-white hover:bg-sky-50 border border-sky-200 rounded-xl py-1.5 font-jua text-sm text-sky-700">45분</button>
-                            <button onclick="setQuickValue('minute', 50)" class="btn-3d bg-white hover:bg-sky-50 border border-sky-200 rounded-xl py-1.5 font-jua text-sm text-sky-700">50분</button>
-                            <button onclick="setQuickValue('minute', 55)" class="btn-3d bg-white hover:bg-sky-50 border border-sky-200 rounded-xl py-1.5 font-jua text-sm text-sky-700">55분</button>
-                        </div>
-                    </div>
-                </div>
+      // 표현 성향 (6~10)
+      { id: 6, domain: '표현', text: '나는 그림 그리기, 글쓰기, 만들기처럼 나만의 작품을 만드는 것을 좋아한다.' },
+      { id: 7, domain: '표현', text: '나는 수업 시간에 내 생각이나 느낌을 친구들 앞에서 발표하는 것을 좋아한다.' },
+      { id: 8, domain: '표현', text: '나는 남들과 똑같은 방법보다 새롭고 기발한 아이디어를 내는 것이 재미있다.' },
+      { id: 9, domain: '표현', text: '나는 배운 내용을 만화, 짧은 글, 노래 등으로 자유롭게 정리해 보는 편이다.' },
+      { id: 10, domain: '표현', text: '나는 하루 동안 느낀 감정이나 생각을 일기나 메모로 남기는 것을 좋아한다.' },
 
-                <!-- Primary Action Buttons (정답 확인 / 힌트 보기) -->
-                <div class="flex gap-3">
-                    <button id="btnCheckAnswer" onclick="checkAnswer()"
-                        class="btn-3d flex-1 bg-emerald-500 hover:bg-emerald-600 text-white border-2 border-emerald-600 rounded-2xl py-4 font-jua text-2xl tracking-wide flex items-center justify-center gap-2">
-                        <span>🎉</span> <span>정답 확인!</span>
-                    </button>
-                    <button onclick="showStepHint()"
-                        class="btn-3d bg-amber-100 hover:bg-amber-200 text-amber-900 border-2 border-amber-300 rounded-2xl px-4 py-4 font-jua text-lg flex items-center justify-center gap-1">
-                        <span>💡</span> <span>힌트</span>
-                    </button>
-                </div>
+      // 협력 성향 (11~15)
+      { id: 11, domain: '협력', text: '나는 혼자 할 때보다 친구들과 모둠을 이루어 함께 활동하는 것을 좋아한다.' },
+      { id: 12, domain: '협력', text: '나는 친구가 어려워하는 숙제나 문제를 친절하게 도와주는 것을 좋아한다.' },
+      { id: 13, domain: '협력', text: '나는 모둠 토의를 할 때 친구들의 의견을 끝까지 잘 들어주는 편이다.' },
+      { id: 14, domain: '협력', text: '나는 학급 행사나 체육 활동에서 모두가 힘을 합쳐 목표를 이루는 것이 재미있다.' },
+      { id: 15, domain: '협력', text: '나는 친구와 의견이 다를 때 서로 양보하며 좋은 해결 방법을 찾는 편이다.' },
 
-                <!-- Dynamic Feedback & Hint Box -->
-                <div id="feedbackBox" class="hidden rounded-2xl p-4 border-2 transition-all">
-                    <div class="flex items-start gap-3">
-                        <div id="feedbackIcon" class="text-3xl shrink-0">🎈</div>
-                        <div class="flex-1">
-                            <h3 id="feedbackTitle" class="font-jua text-xl"></h3>
-                            <p id="feedbackMessage" class="text-sm sm:text-base mt-1 leading-relaxed"></p>
-                            <div id="feedbackDetailHint" class="mt-2.5 p-3 rounded-xl bg-white/80 border border-slate-200 text-xs sm:text-sm space-y-1 hidden"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+      // 계획 성향 (16~20)
+      { id: 16, domain: '계획', text: '나는 숙제나 준비물을 미리 챙겨 두고 제시간에 끝내는 것을 좋아한다.' },
+      { id: 17, domain: '계획', text: '나는 공부하기 전에 오늘 할 일을 순서대로 계획표에 적어 두는 편이다.' },
+      { id: 18, domain: '계획', text: '나는 내 책상이나 사물함, 필통을 깔끔하게 정리해 두는 것을 좋아한다.' },
+      { id: 19, domain: '계획', text: '나는 약속 시간이나 학급 규칙을 잘 지키려고 노력하는 편이다.' },
+      { id: 20, domain: '계획', text: '나는 큰 과제가 주어지면 작은 단계로 나누어 차근차근 해결하는 편이다.' }
+    ];
 
-            <!-- EXPLORE / PRINCIPLE LAB PANEL (자유 탐색 및 3시 30분 시침 각도 원리 실험실) -->
-            <div id="explorePanel" class="hidden bg-white rounded-3xl border-4 border-indigo-300 shadow-xl p-5 sm:p-6 flex flex-col gap-4">
-                <div class="border-b-2 border-indigo-100 pb-3">
-                    <span class="bg-indigo-100 text-indigo-800 text-xs font-bold px-3 py-1 rounded-full">
-                        🔍 시침·분침 연동 원리 실험실
-                    </span>
-                    <h2 class="font-jua text-2xl text-slate-800 mt-1">
-                        분침이 움직이면 시침도 함께 움직여요!
-                    </h2>
-                    <p class="text-xs sm:text-sm text-slate-600 mt-0.5">
-                        슬라이더나 예시 버튼을 눌러 시침이 두 숫자 사이 어디에 위치하는지 관찰해 보세요.
-                    </p>
-                </div>
+    const SCALE_OPTIONS = [
+      { value: 1, label: '전혀 아니다' },
+      { value: 2, label: '아닌 편이다' },
+      { value: 3, label: '그런 편이다' },
+      { value: 4, label: '매우 그렇다' }
+    ];
 
-                <!-- Live Digital Display -->
-                <div class="bg-indigo-50 border-2 border-indigo-200 rounded-2xl p-4 text-center">
-                    <p class="text-xs font-bold text-indigo-600 mb-1">현재 실험 중인 시각</p>
-                    <p id="exploreTimeDisplay" class="font-jua text-4xl text-indigo-900">3시 30분</p>
-                </div>
+    const DOMAIN_META = {
+      탐구: { emoji: '🔍', title: '파트 1. 궁금한 걸 파헤치는 나 (탐구)', color: '#0284c7', bg: 'bg-sky-50', text: 'text-sky-700', bar: 'bg-sky-500' },
+      표현: { emoji: '🎨', title: '파트 2. 생각을 표현하는 나 (표현)', color: '#7c3aed', bg: 'bg-violet-50', text: 'text-violet-700', bar: 'bg-violet-500' },
+      협력: { emoji: '🤝', title: '파트 3. 친구와 함께하는 나 (협력)', color: '#059669', bg: 'bg-emerald-50', text: 'text-emerald-700', bar: 'bg-emerald-500' },
+      계획: { emoji: '📅', title: '파트 4. 차근차근 실천하는 나 (계획)', color: '#d97706', bg: 'bg-amber-50', text: 'text-amber-700', bar: 'bg-amber-500' }
+    };
 
-                <!-- Sliders for Hour and Minute -->
-                <div class="space-y-4 bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                    <div>
-                        <div class="flex justify-between text-sm font-bold text-rose-600 mb-1">
-                            <span>짧은바늘 (시) 조절</span>
-                            <span id="lblSliderHour">3시</span>
-                        </div>
-                        <input id="sliderHour" type="range" min="1" max="12" value="3" oninput="updateFromExploreSliders()"
-                            class="w-full h-3 bg-rose-200 rounded-lg appearance-none cursor-pointer accent-rose-500">
-                    </div>
+    // MBTI 및 홀랜드(Holland) 연계 성향 프로필
+    const TYPE_PROFILES = {
+      탐구: {
+        nickname: '호기심 과학자',
+        theory: '홀랜드 I(탐구형) · MBTI NT(분석형) 경향',
+        desc: '사물의 원리를 깊이 파고들고 궁금증을 스스로 해결하려는 의지가 강합니다. 논리적인 질문과 자료 탐색에서 뛰어난 집중력을 발휘합니다.',
+        role: '모둠 자료 조사원, 실험·관찰 기록장, 탐구 프로젝트 리더',
+        habit: '단순 암기보다 "왜 그럴까?"를 해결하는 탐구 학습이 효과적입니다. 궁금한 주제를 탐구 노트에 적고 스스로 답을 찾아보도록 격려해 주세요.',
+        encourage: '호기심이 가득한 멋진 탐구왕이에요! 궁금한 것을 끝까지 찾아보는 힘은 앞으로 큰 보물이 될 거예요.'
+      },
+      표현: {
+        nickname: '반짝이는 크리에이터',
+        theory: '홀랜드 A(예술형) · MBTI NF/NP(창의·표현형) 경향',
+        desc: '풍부한 상상력과 독창적인 아이디어를 가지고 있으며, 글·그림·발표 등 다양한 방식으로 자신의 생각을 드러내는 데 강점이 있습니다.',
+        role: '발표 담당, 포스터·시각 자료 디자이너, 아이디어 뱅크',
+        habit: '배운 내용을 마인드맵, 4컷 만화, 1분 스피치 등으로 자유롭게 표현하는 학습 습관이 잘 맞습니다. 남다른 시도를 아낌없이 칭찬해 주세요.',
+        encourage: '반짝이는 아이디어가 넘치는 멋진 크리에이터예요! 너만의 개성 있는 표현으로 교실을 더욱 즐겁게 만들어 줘요.'
+      },
+      협력: {
+        nickname: '따뜻한 소통 리더',
+        theory: '홀랜드 S(사회형) · MBTI FJ(공감·조화형) 경향',
+        desc: '친구의 이야기를 잘 경청하고 배려하며, 함께 힘을 합쳐 목표를 이룰 때 높은 성취감을 느끼는 관계 중심형입니다.',
+        role: '모둠장, 토의 진행자, 갈등 중재자, 학급 도우미',
+        habit: '친구와 서로 설명해 주는 짝 학습·모둠 토의에서 학습 효과가 높습니다. 혼자 하는 과제도 작은 목표를 세워 성취감을 느낄 수 있게 도와주세요.',
+        encourage: '친구들의 마음을 잘 헤아리는 따뜻한 소통 리더예요! 네가 있어서 우리 반 분위기가 늘 밝고 든든해요.'
+      },
+      계획: {
+        nickname: '든든한 학급 매니저',
+        theory: '홀랜드 C(관습형) · MBTI SJ(체계·실천형) 경향',
+        desc: '약속과 학급 규칙을 성실히 지키고, 과제를 단계별로 나누어 끝까지 깔끔하게 마무리하는 자기관리 능력이 우수합니다.',
+        role: '시간 관리자, 준비물·과제 점검 담당, 학급 서기',
+        habit: '체크리스트와 학습 플래너 활용에 강점이 있습니다. 예상치 못한 상황으로 계획이 바뀌었을 때 유연하게 대처하는 연습을 함께 지도해 주세요.',
+        encourage: '맡은 일을 끝까지 해내는 든든한 학급 매니저예요! 차근차근 실천하는 멋진 습관을 앞으로도 계속 이어가 보아요.'
+      }
+    };
 
-                    <div>
-                        <div class="flex justify-between text-sm font-bold text-sky-700 mb-1">
-                            <span>긴바늘 (분) 조절 (시침이 함께 움직여요!)</span>
-                            <span id="lblSliderMinute">30분</span>
-                        </div>
-                        <input id="sliderMinute" type="range" min="0" max="59" value="30" oninput="updateFromExploreSliders()"
-                            class="w-full h-3 bg-sky-200 rounded-lg appearance-none cursor-pointer accent-sky-600">
-                    </div>
-                </div>
+    const GROWTH_TIPS = {
+      탐구: '생활 속 작은 호기심을 하루에 하나씩 질문으로 적어보는 "오늘의 왜?" 활동을 추천합니다.',
+      표현: '부담 없는 짝 발표나 짧은 키워드 메모부터 시작해 자신의 생각을 드러내는 자신감을 키워주세요.',
+      협력: '역할이 명확하게 나뉜 소규모(2~3명) 모둠 활동부터 경험하면 협동이 한결 편안해집니다.',
+      계획: '하루에 꼭 해야 할 일 3가지만 포스트잇에 적어 지워나가는 작은 실천 습관부터 시작해 보세요.'
+    };
 
-                <!-- Key PRD Demonstration Presets -->
+    // 기본 샘플 데이터 3명 (김민수, 이서연, 박지훈)
+    const SAMPLE_STUDENTS = [
+      {
+        id: 'sample-1',
+        name: '김민수',
+        timestamp: '2026-11-20 09:15:20',
+        scores: { 탐구: 19, 표현: 14, 협력: 12, 계획: 16 },
+        primaryType: '탐구'
+      },
+      {
+        id: 'sample-2',
+        name: '이서연',
+        timestamp: '2026-11-20 09:22:45',
+        scores: { 탐구: 13, 표현: 19, 협력: 17, 계획: 11 },
+        primaryType: '표현'
+      },
+      {
+        id: 'sample-3',
+        name: '박지훈',
+        timestamp: '2026-11-20 09:31:10',
+        scores: { 탐구: 14, 표현: 12, 협력: 18, 계획: 18 },
+        primaryType: '협력·계획'
+      }
+    ];
+
+    /* =====================================================================
+     * 2. 상태 관리 및 localStorage 유틸리티
+     * ===================================================================== */
+    let currentStudentName = '';
+    let currentAnswers = {};
+    let selectedStudentId = null;
+    let radarChartInstance = null;
+
+    function loadStudents() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(SAMPLE_STUDENTS));
+          return [...SAMPLE_STUDENTS];
+        }
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed) || parsed.length === 0) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(SAMPLE_STUDENTS));
+          return [...SAMPLE_STUDENTS];
+        }
+        return parsed;
+      } catch (e) {
+        return [...SAMPLE_STUDENTS];
+      }
+    }
+
+    function saveStudentRecord(record) {
+      const list = loadStudents();
+      list.unshift(record); // 최신 제출 학생을 맨 위로
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+      } catch (e) {
+        console.error('localStorage 저장 오류:', e);
+      }
+    }
+
+    function formatNow() {
+      const d = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    }
+
+    /* =====================================================================
+     * 3. 라우팅 및 탭 전환 (?page=dashboard 지원)
+     * ===================================================================== */
+    function switchTab(tabName) {
+      const surveyView = document.getElementById('surveyView');
+      const dashboardView = document.getElementById('dashboardView');
+      const tabSurveyBtn = document.getElementById('tabSurveyBtn');
+      const tabDashboardBtn = document.getElementById('tabDashboardBtn');
+
+      if (tabName === 'dashboard') {
+        surveyView.classList.add('hidden');
+        dashboardView.classList.remove('hidden');
+        tabDashboardBtn.className = 'px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-bold bg-white text-indigo-700 shadow-sm transition-all';
+        tabSurveyBtn.className = 'px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-bold text-slate-500 hover:text-slate-700 transition-all';
+        renderDashboard();
+      } else {
+        dashboardView.classList.add('hidden');
+        surveyView.classList.remove('hidden');
+        tabSurveyBtn.className = 'px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-bold bg-white text-indigo-700 shadow-sm transition-all';
+        tabDashboardBtn.className = 'px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-bold text-slate-500 hover:text-slate-700 transition-all';
+      }
+
+      // URL 쿼리 파라미터 동기화 (오류 방지용 try-catch)
+      try {
+        const url = new URL(window.location.href);
+        if (tabName === 'dashboard') {
+          url.searchParams.set('page', 'dashboard');
+        } else {
+          url.searchParams.delete('page');
+        }
+        window.history.replaceState({}, '', url.toString());
+      } catch (e) {
+        // sandboxed iframe 등에서는 무시
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    /* =====================================================================
+     * 4. 학생용 설문 (Survey) 로직
+     * ===================================================================== */
+    function handleStudentLogin() {
+      const nameInput = document.getElementById('inputStudentName');
+      const pwInput = document.getElementById('inputStudentPw');
+      const errorBox = document.getElementById('loginErrorBox');
+
+      const name = nameInput.value.trim();
+      const pw = pwInput.value.trim();
+
+      if (!name) {
+        errorBox.textContent = '⚠️ 이름을 먼저 입력해 주세요.';
+        errorBox.classList.remove('hidden');
+        nameInput.focus();
+        return;
+      }
+
+      if (pw !== ENTRY_PASSWORD) {
+        errorBox.textContent = '⚠️ 입장 암호가 올바르지 않아요. 선생님께 암호(2026)를 확인해 주세요.';
+        errorBox.classList.remove('hidden');
+        pwInput.focus();
+        return;
+      }
+
+      errorBox.classList.add('hidden');
+      currentStudentName = name;
+      currentAnswers = {};
+
+      document.getElementById('surveyStudentBadge').textContent = `👤 ${currentStudentName} 학생`;
+      document.getElementById('studentLoginCard').classList.add('hidden');
+      document.getElementById('studentCompleteCard').classList.add('hidden');
+      document.getElementById('studentSurveyArea').classList.remove('hidden');
+
+      renderSurveyQuestions();
+      updateSurveyProgress();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function renderSurveyQuestions() {
+      const wrapper = document.getElementById('questionsWrapper');
+      const domains = ['탐구', '표현', '협력', '계획'];
+
+      wrapper.innerHTML = domains.map(domain => {
+        const meta = DOMAIN_META[domain];
+        const items = QUESTIONS.filter(q => q.domain === domain);
+
+        const itemsHtml = items.map(q => `
+          <div class="py-5 border-b border-slate-100 last:border-b-0">
+            <p class="text-sm sm:text-base font-bold text-slate-800 mb-3.5 leading-snug">
+              <span class="inline-block w-6 text-indigo-500 font-extrabold">${q.id}.</span>${q.text}
+            </p>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              ${SCALE_OPTIONS.map(opt => `
                 <div>
-                    <p class="text-xs font-bold text-slate-500 mb-2">📌 핵심 개념 비교해보기 (클릭!):</p>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button onclick="setExplorePreset(3, 0)" class="btn-3d bg-amber-50 hover:bg-amber-100 border-2 border-amber-300 rounded-xl p-2.5 text-left">
-                            <p class="font-jua text-base text-amber-900">🕒 3시 00분 (정시)</p>
-                            <p class="text-xs text-amber-800">시침이 숫자 3을 정확히 가리켜요</p>
-                        </button>
-                        <button onclick="setExplorePreset(3, 30)" class="btn-3d bg-rose-50 hover:bg-rose-100 border-2 border-rose-300 rounded-xl p-2.5 text-left">
-                            <p class="font-jua text-base text-rose-900">🕞 3시 30분 (PRD 예시)</p>
-                            <p class="text-xs text-rose-800">시침이 <b>3과 4의 정중앙</b>에 위치해요!</p>
-                        </button>
-                        <button onclick="setExplorePreset(3, 45)" class="btn-3d bg-sky-50 hover:bg-sky-100 border-2 border-sky-300 rounded-xl p-2.5 text-left">
-                            <p class="font-jua text-base text-sky-900">🕟 3시 45분 (오개념 주의!)</p>
-                            <p class="text-xs text-sky-800">4에 가까워 보이지만 아직 <b>3시</b>예요</p>
-                        </button>
-                        <button onclick="setExplorePreset(12, 55)" class="btn-3d bg-emerald-50 hover:bg-emerald-100 border-2 border-emerald-300 rounded-xl p-2.5 text-left">
-                            <p class="font-jua text-base text-emerald-900">🕧 12시 55분 (오개념 주의!)</p>
-                            <p class="text-xs text-emerald-800">1에 아주 가깝지만 아직 <b>12시</b>예요</p>
-                        </button>
-                    </div>
+                  <input type="radio" id="q${q.id}_${opt.value}" name="q${q.id}" value="${opt.value}"
+                    class="scale-radio hidden" onchange="onSelectAnswer(${q.id}, ${opt.value})">
+                  <label for="q${q.id}_${opt.value}"
+                    class="flex items-center justify-center text-center px-2 py-3 rounded-xl border-2 border-slate-200 text-xs sm:text-sm font-medium text-slate-500 cursor-pointer hover:border-indigo-300 hover:bg-slate-50 transition-all select-none">
+                    ${opt.label}
+                  </label>
                 </div>
+              `).join('')}
             </div>
+          </div>
+        `).join('');
 
-            <!-- PRD Post-Implementation Review Verification Card (구현 후 검토 질문 확인 패널) -->
-            <div class="bg-slate-800 text-slate-100 rounded-3xl p-4 sm:p-5 shadow-lg border-2 border-slate-700">
-                <div class="flex items-center justify-between mb-2">
-                    <div class="flex items-center gap-2">
-                        <span class="bg-amber-400 text-slate-900 text-xs font-extrabold px-2.5 py-0.5 rounded-full">PRD 구현 검토</span>
-                        <h3 class="font-jua text-base sm:text-lg text-amber-300">시/분침 수학적 각도 정밀 모니터</h3>
-                    </div>
-                    <button onclick="setExplorePreset(3, 30)" class="text-xs bg-slate-700 hover:bg-slate-600 text-amber-300 px-2.5 py-1 rounded-lg border border-slate-600 font-bold">
-                        3시 30분 검증 테스트
-                    </button>
-                </div>
-
-                <div class="grid grid-cols-2 gap-2.5 text-xs sm:text-sm bg-slate-900/90 p-3 rounded-2xl border border-slate-700">
-                    <div>
-                        <p class="text-rose-400 font-bold">짧은바늘 (시침) 각도</p>
-                        <p id="inspectorHourAngle" class="font-mono text-base sm:text-lg font-extrabold text-white mt-0.5">90.0°</p>
-                        <p id="inspectorHourFormula" class="text-[11px] text-slate-400 mt-0.5">(3 × 30°) + (0 × 0.5°)</p>
-                    </div>
-                    <div>
-                        <p class="text-sky-400 font-bold">긴바늘 (분침) 각도</p>
-                        <p id="inspectorMinuteAngle" class="font-mono text-base sm:text-lg font-extrabold text-white mt-0.5">0.0°</p>
-                        <p id="inspectorMinuteFormula" class="text-[11px] text-slate-400 mt-0.5">0분 × 6°</p>
-                    </div>
-                </div>
-
-                <p id="inspectorNote" class="text-xs text-slate-300 mt-2.5 leading-relaxed">
-                    ✔ <b>검토 질문 ① 시/분침 위치의 정확성:</b> 분침이 1분(6°) 이동할 때마다 시침이 정확히 0.5°씩 연동 회전하여 오개념을 방지합니다.
-                </p>
+        return `
+          <div class="bg-white rounded-3xl border border-slate-200 p-5 sm:p-7 shadow-sm">
+            <div class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full ${meta.bg} ${meta.text} text-xs sm:text-sm font-extrabold mb-2">
+              <span>${meta.emoji}</span>
+              <span>${meta.title}</span>
             </div>
+            <div>${itemsHtml}</div>
+          </div>
+        `;
+      }).join('');
+    }
 
+    function onSelectAnswer(qId, value) {
+      currentAnswers['q' + qId] = value;
+      updateSurveyProgress();
+    }
+
+    function updateSurveyProgress() {
+      const answeredCount = Object.keys(currentAnswers).length;
+      const total = QUESTIONS.length;
+      const remaining = total - answeredCount;
+      const percent = Math.round((answeredCount / total) * 100);
+
+      document.getElementById('surveyProgressText').textContent = `${answeredCount} / ${total} 문항 완료`;
+      document.getElementById('surveyProgressBar').style.width = `${percent}%`;
+
+      const submitBtn = document.getElementById('btnSubmitSurvey');
+      const hintEl = document.getElementById('submitStatusHint');
+
+      if (remaining === 0) {
+        submitBtn.disabled = false;
+        hintEl.innerHTML = '✅ <span class="text-emerald-600 font-bold">20문항을 모두 완료했어요!</span> 아래 버튼을 눌러 결과를 확인하세요.';
+      } else {
+        submitBtn.disabled = true;
+        hintEl.innerHTML = `아직 체크하지 않은 문항이 <span class="text-indigo-600 font-extrabold">${remaining}개</span> 남았어요. 모든 문항에 체크해야 제출할 수 있어요!`;
+      }
+    }
+
+    function handleSurveySubmit() {
+      if (Object.keys(currentAnswers).length < QUESTIONS.length) return;
+
+      const sumRange = (start, end) => {
+        let sum = 0;
+        for (let i = start; i <= end; i++) {
+          sum += Number(currentAnswers['q' + i] || 0);
+        }
+        return sum;
+      };
+
+      const scores = {
+        탐구: sumRange(1, 5),
+        표현: sumRange(6, 10),
+        협력: sumRange(11, 15),
+        계획: sumRange(16, 20)
+      };
+
+      const maxScore = Math.max(scores.탐구, scores.표현, scores.협력, scores.계획);
+      const topDomains = Object.keys(scores).filter(k => scores[k] === maxScore);
+      const primaryType = topDomains.join('·');
+
+      const newRecord = {
+        id: 'stu-' + Date.now(),
+        name: currentStudentName,
+        timestamp: formatNow(),
+        scores: scores,
+        primaryType: primaryType
+      };
+
+      saveStudentRecord(newRecord);
+      selectedStudentId = newRecord.id;
+      showCompleteScreen(newRecord);
+    }
+
+    function showCompleteScreen(record) {
+      document.getElementById('studentSurveyArea').classList.add('hidden');
+      document.getElementById('studentCompleteCard').classList.remove('hidden');
+
+      const mainKey = record.primaryType.split('·')[0];
+      const profile = TYPE_PROFILES[mainKey] || TYPE_PROFILES['탐구'];
+
+      document.getElementById('completeSubtitle').textContent = `${record.name} 학생의 응답이 안전하게 저장되었어요.`;
+      document.getElementById('completeTypeBadge').textContent = `${record.primaryType} 성향`;
+      document.getElementById('completeTypeNick').textContent = `${profile.nickname} (${profile.theory})`;
+
+      document.getElementById('completeScoreCards').innerHTML = Object.entries(record.scores).map(([k, v]) => {
+        const meta = DOMAIN_META[k];
+        return `
+          <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3.5">
+            <div class="text-xs font-bold ${meta.text} mb-1">${meta.emoji} ${k}</div>
+            <div class="text-xl font-extrabold text-slate-800">${v}<span class="text-xs font-medium text-slate-400"> / 20</span></div>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('completeEncourageBox').textContent = `💌 "${profile.encourage}"`;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function resetSurveyFlow() {
+      currentStudentName = '';
+      currentAnswers = {};
+      document.getElementById('inputStudentName').value = '';
+      document.getElementById('inputStudentPw').value = '';
+      document.getElementById('loginErrorBox').classList.add('hidden');
+
+      document.getElementById('studentCompleteCard').classList.add('hidden');
+      document.getElementById('studentSurveyArea').classList.add('hidden');
+      document.getElementById('studentLoginCard').classList.remove('hidden');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function goToDashboardWithLatest() {
+      switchTab('dashboard');
+    }
+
+    /* =====================================================================
+     * 5. 교사용 분석표 (Dashboard) 로직
+     * ===================================================================== */
+    function renderDashboard() {
+      const students = loadStudents();
+      updateClassSummary(students);
+
+      if (students.length > 0) {
+        const exists = students.some(s => s.id === selectedStudentId);
+        if (!exists) {
+          selectedStudentId = students[0].id;
+        }
+      } else {
+        selectedStudentId = null;
+      }
+
+      renderStudentList();
+      if (selectedStudentId) {
+        const target = students.find(s => s.id === selectedStudentId);
+        if (target) renderStudentReport(target);
+      }
+    }
+
+    function updateClassSummary(students) {
+      const n = students.length;
+      document.getElementById('summaryTotal').textContent = `${n}명`;
+
+      const calcAvg = key => {
+        if (n === 0) return '0.0';
+        const sum = students.reduce((acc, s) => acc + (s.scores[key] || 0), 0);
+        return (sum / n).toFixed(1);
+      };
+
+      document.getElementById('summaryInquiry').innerHTML = `${calcAvg('탐구')} <span class="text-xs font-medium text-slate-400">/ 20</span>`;
+      document.getElementById('summaryExpression').innerHTML = `${calcAvg('표현')} <span class="text-xs font-medium text-slate-400">/ 20</span>`;
+      document.getElementById('summaryCooperation').innerHTML = `${calcAvg('협력')} <span class="text-xs font-medium text-slate-400">/ 20</span>`;
+      document.getElementById('summaryPlanning').innerHTML = `${calcAvg('계획')} <span class="text-xs font-medium text-slate-400">/ 20</span>`;
+    }
+
+    function renderStudentList() {
+      const students = loadStudents();
+      const keyword = (document.getElementById('studentSearchInput').value || '').trim().toLowerCase();
+      const container = document.getElementById('studentListContainer');
+
+      const filtered = students.filter(s => s.name.toLowerCase().includes(keyword));
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="text-center py-10 text-xs text-slate-400 font-medium">검색 결과가 없습니다.</div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(s => {
+        const isActive = s.id === selectedStudentId;
+        return `
+          <button onclick="selectStudent('${s.id}')"
+            class="w-full text-left p-3.5 rounded-2xl border transition-all ${
+              isActive
+                ? 'border-indigo-500 bg-indigo-50/70 shadow-sm'
+                : 'border-slate-200 bg-white hover:bg-slate-50'
+            }">
+            <div class="flex items-center justify-between gap-2 mb-1">
+              <span class="font-extrabold text-sm text-slate-800">${s.name}</span>
+              <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-100 text-indigo-700">${s.primaryType}형</span>
+            </div>
+            <div class="text-[11px] text-slate-400">${s.timestamp}</div>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function selectStudent(id) {
+      selectedStudentId = id;
+      const students = loadStudents();
+      const target = students.find(s => s.id === id);
+      renderStudentList();
+      if (target) {
+        renderStudentReport(target);
+      }
+    }
+
+    function renderStudentReport(student) {
+      document.getElementById('btnPrintPdf').disabled = false;
+
+      const primaryKey = student.primaryType.split('·')[0];
+      const profile = TYPE_PROFILES[primaryKey] || TYPE_PROFILES['탐구'];
+
+      // 가장 낮은 점수 영역 도출 (균형 성장 포인트)
+      const scoreEntries = Object.entries(student.scores);
+      const lowestEntry = scoreEntries.reduce((min, cur) => (cur[1] < min[1] ? cur : min), scoreEntries[0]);
+      const lowestKey = lowestEntry[0];
+
+      const reportEl = document.getElementById('reportContainer');
+      reportEl.innerHTML = `
+        <!-- 리포트 헤더 -->
+        <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3 pb-5 border-b-2 border-slate-100 mb-6">
+          <div>
+            <span class="inline-block text-xs font-bold text-indigo-600 mb-1">초등 활동 성향 개별 분석 리포트</span>
+            <h3 class="text-2xl font-extrabold text-slate-800">${student.name} 학생</h3>
+            <p class="text-xs text-slate-500 mt-1">제출일시: ${student.timestamp} · ${profile.theory}</p>
+          </div>
+          <div class="inline-flex flex-col sm:items-end">
+            <span class="px-4 py-1.5 rounded-full bg-indigo-600 text-white text-sm font-extrabold shadow-sm">
+              ${student.primaryType} 성향 · ${profile.nickname}
+            </span>
+          </div>
         </div>
-    </main>
 
-    <script>
-        /***********************************************************************
-         * 1. APPLICATION STATE & CONFIGURATION
-         ***********************************************************************/
-        const state = {
-            mode: 'quiz',          // 'quiz' or 'explore'
-            difficulty: 1,         // 1: 정시, 2: 30분 단위, 3: 5분 단위, 4: 1분 단위
-            targetHour: 3,         // 1 ~ 12
-            targetMinute: 0,       // 0 ~ 59
-            totalCount: 0,
-            correctCount: 0,
-            wrongCount: 0,
-            showMinuteHelpers: false,
-            showHourSector: false,
-            soundEnabled: true,
-            activeInput: 'hour',   // 'hour' or 'minute'
-            isTransitioning: false,
-            currentHourAngle: 0,
-            currentMinuteAngle: 0
-        };
+        <!-- 레이더 차트 & 영역별 막대 그래프 -->
+        <div class="print-grid-2 grid grid-cols-1 md:grid-cols-2 gap-6 items-center mb-7 print-break-avoid">
+          <div class="bg-slate-50 rounded-2xl p-4 border border-slate-100 flex items-center justify-center">
+            <div class="w-full max-w-[280px] aspect-square">
+              <canvas id="studentRadarCanvas"></canvas>
+            </div>
+          </div>
 
-        const difficultyInfo = {
-            1: { badge: '🌱 1단계: 정시 읽기 (~시 00분)', stepMinute: 60 },
-            2: { badge: '🌿 2단계: 30분 단위 읽기 (00분 / 30분)', stepMinute: 30 },
-            3: { badge: '🌷 3단계: 5분 단위 읽기 (5분 눈금)', stepMinute: 5 },
-            4: { badge: '👑 4단계: 1분 단위 읽기 (모든 눈금)', stepMinute: 1 }
-        };
+          <div class="space-y-4">
+            ${scoreEntries.map(([domain, score]) => {
+              const meta = DOMAIN_META[domain];
+              const pct = Math.round((score / 20) * 100);
+              return `
+                <div>
+                  <div class="flex items-center justify-between text-sm font-bold mb-1.5">
+                    <span class="text-slate-700">${meta.emoji} ${domain} 성향</span>
+                    <span class="text-slate-800">${score} <span class="text-xs font-medium text-slate-400">/ 20점</span></span>
+                  </div>
+                  <div class="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
+                    <div class="h-full ${meta.bar} rounded-full transition-all duration-500" style="width: ${pct}%"></div>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
 
-        /***********************************************************************
-         * 2. SOUND SYNTHESIS (Tone.js - No External Audio Files Needed)
-         ***********************************************************************/
-        let synth = null;
+        <!-- 4대 맞춤형 지도 조언 카드 -->
+        <div class="print-grid-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="print-break-avoid bg-indigo-50/60 border border-indigo-100 rounded-2xl p-4">
+            <h4 class="text-sm font-extrabold text-indigo-800 mb-1.5">✨ 핵심 강점 해석</h4>
+            <p class="text-xs sm:text-sm text-slate-700 leading-relaxed">${profile.desc}</p>
+          </div>
 
-        function initAudio() {
-            if (!synth && typeof Tone !== 'undefined') {
-                synth = new Tone.PolySynth(Tone.Synth, {
-                    oscillator: { type: 'triangle' },
-                    envelope: { attack: 0.02, decay: 0.15, sustain: 0.1, release: 0.4 }
-                }).toDestination();
-                synth.volume.value = -8;
+          <div class="print-break-avoid bg-sky-50/60 border border-sky-100 rounded-2xl p-4">
+            <h4 class="text-sm font-extrabold text-sky-800 mb-1.5">🧩 추천 학급·모둠 역할</h4>
+            <p class="text-xs sm:text-sm text-slate-700 leading-relaxed">${profile.role}</p>
+          </div>
+
+          <div class="print-break-avoid bg-emerald-50/60 border border-emerald-100 rounded-2xl p-4">
+            <h4 class="text-sm font-extrabold text-emerald-800 mb-1.5">📚 학습·생활습관 지도 조언</h4>
+            <p class="text-xs sm:text-sm text-slate-700 leading-relaxed">${profile.habit}</p>
+          </div>
+
+          <div class="print-break-avoid bg-amber-50/60 border border-amber-100 rounded-2xl p-4">
+            <h4 class="text-sm font-extrabold text-amber-800 mb-1.5">🌱 균형 성장 포인트 (${lowestKey} 영역)</h4>
+            <p class="text-xs sm:text-sm text-slate-700 leading-relaxed">${GROWTH_TIPS[lowestKey]}</p>
+          </div>
+        </div>
+      `;
+
+      // Chart.js 레이더 차트 렌더링
+      if (radarChartInstance) {
+        radarChartInstance.destroy();
+      }
+      const ctx = document.getElementById('studentRadarCanvas').getContext('2d');
+      radarChartInstance = new Chart(ctx, {
+        type: 'radar',
+        data: {
+          labels: ['탐구', '표현', '협력', '계획'],
+          datasets: [{
+            label: `${student.name} 점수`,
+            data: [
+              student.scores.탐구,
+              student.scores.표현,
+              student.scores.협력,
+              student.scores.계획
+            ],
+            backgroundColor: 'rgba(79, 70, 229, 0.2)',
+            borderColor: '#4f46e5',
+            borderWidth: 2.5,
+            pointBackgroundColor: '#4f46e5',
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 2,
+            pointRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          scales: {
+            r: {
+              min: 0,
+              max: 20,
+              ticks: {
+                stepSize: 5,
+                backdropColor: 'transparent',
+                font: { size: 10 }
+              },
+              pointLabels: {
+                font: {
+                  family: "'Noto Sans KR', sans-serif",
+                  size: 13,
+                  weight: '700'
+                },
+                color: '#334155'
+              },
+              grid: { color: '#e2e8f0' },
+              angleLines: { color: '#e2e8f0' }
             }
+          },
+          plugins: {
+            legend: { display: false }
+          }
         }
-
-        async function playSound(type) {
-            if (!state.soundEnabled || typeof Tone === 'undefined') return;
-            try {
-                if (Tone.context.state !== 'running') {
-                    await Tone.start();
-                }
-                initAudio();
-                const now = Tone.now();
-                if (type === 'correct') {
-                    // Cheerful fanfare arpeggio
-                    synth.triggerAttackRelease('C5', '16n', now);
-                    synth.triggerAttackRelease('E5', '16n', now + 0.1);
-                    synth.triggerAttackRelease('G5', '16n', now + 0.2);
-                    synth.triggerAttackRelease(['C6', 'E5'], '8n', now + 0.32);
-                } else if (type === 'wrong') {
-                    // Gentle encouraging double tone
-                    synth.triggerAttackRelease('E4', '16n', now);
-                    synth.triggerAttackRelease('C4', '8n', now + 0.15);
-                } else if (type === 'click') {
-                    synth.triggerAttackRelease('G5', '32n', now);
-                }
-            } catch (e) {
-                // Ignore audio context restrictions if not yet interacted
-            }
-        }
-
-        function toggleSound() {
-            state.soundEnabled = !state.soundEnabled;
-            const btn = document.getElementById('btnSoundToggle');
-            btn.textContent = state.soundEnabled ? '🔊' : '🔇';
-            if (state.soundEnabled) playSound('click');
-        }
-
-        /***********************************************************************
-         * 3. BUILD SVG ANALOG CLOCK (1~12 Numbers & 60 Ticks)
-         ***********************************************************************/
-        function buildClockFace() {
-            const ticksGroup = document.getElementById('clockTicksGroup');
-            const minHelperGroup = document.getElementById('minuteHelperNumbersGroup');
-            const hourGroup = document.getElementById('hourNumbersGroup');
-
-            ticksGroup.innerHTML = '';
-            minHelperGroup.innerHTML = '';
-            hourGroup.innerHTML = '';
-
-            const cx = 200;
-            const cy = 200;
-
-            // Create 60 minute ticks and 5-minute helper numbers
-            for (let m = 0; m < 60; m++) {
-                const angleDeg = m * 6;
-                const angleRad = (angleDeg - 90) * (Math.PI / 180);
-                const isFiveMin = m % 5 === 0;
-
-                const outerR = 166;
-                const innerR = isFiveMin ? 152 : 159;
-
-                const x1 = cx + outerR * Math.cos(angleRad);
-                const y1 = cy + outerR * Math.sin(angleRad);
-                const x2 = cx + innerR * Math.cos(angleRad);
-                const y2 = cy + innerR * Math.sin(angleRad);
-
-                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                line.setAttribute('x1', x1.toFixed(2));
-                line.setAttribute('y1', y1.toFixed(2));
-                line.setAttribute('x2', x2.toFixed(2));
-                line.setAttribute('y2', y2.toFixed(2));
-                line.setAttribute('stroke', isFiveMin ? '#334155' : '#94A3B8');
-                line.setAttribute('stroke-width', isFiveMin ? '3.5' : '1.6');
-                line.setAttribute('stroke-linecap', 'round');
-                ticksGroup.appendChild(line);
-
-                // Small outer minute helper numbers (5, 10, 15 ... 55, 0)
-                if (isFiveMin) {
-                    const helperR = 181;
-                    const hx = cx + helperR * Math.cos(angleRad);
-                    const hy = cy + helperR * Math.sin(angleRad);
-
-                    const badge = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-                    badge.setAttribute('cx', hx.toFixed(2));
-                    badge.setAttribute('cy', hy.toFixed(2));
-                    badge.setAttribute('r', '10');
-                    badge.setAttribute('fill', '#0284C7');
-                    minHelperGroup.appendChild(badge);
-
-                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                    text.setAttribute('x', hx.toFixed(2));
-                    text.setAttribute('y', (hy + 3.5).toFixed(2));
-                    text.setAttribute('text-anchor', 'middle');
-                    text.setAttribute('fill', '#FFFFFF');
-                    text.setAttribute('font-size', '10');
-                    text.setAttribute('font-weight', 'bold');
-                    text.setAttribute('font-family', "'Jua', sans-serif");
-                    text.textContent = m === 0 ? '0' : String(m);
-                    minHelperGroup.appendChild(text);
-                }
-            }
-
-            // Create 1 to 12 hour numbers at exact clock positions
-            for (let h = 1; h <= 12; h++) {
-                const angleDeg = h * 30;
-                const angleRad = (angleDeg - 90) * (Math.PI / 180);
-                const numR = 128;
-
-                const nx = cx + numR * Math.cos(angleRad);
-                const ny = cy + numR * Math.sin(angleRad);
-
-                const numText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                numText.setAttribute('id', `clockHourNum-${h}`);
-                numText.setAttribute('x', nx.toFixed(2));
-                numText.setAttribute('y', (ny + 9).toFixed(2));
-                numText.setAttribute('text-anchor', 'middle');
-                numText.setAttribute('fill', '#1E293B');
-                numText.setAttribute('font-size', '28');
-                numText.setAttribute('font-family', "'Jua', sans-serif");
-                numText.textContent = String(h);
-                hourGroup.appendChild(numText);
-            }
-        }
-
-        /***********************************************************************
-         * 4. MATHEMATICAL ANGLE LOGIC & VISUAL SYNCHRONIZATION
-         *    - Minute Hand Angle = minutes * 6°
-         *    - Hour Hand Angle   = (hours % 12) * 30° + (minutes * 0.5°)
-         ***********************************************************************/
-        function renderClockHands(hour, minute, animate = true) {
-            const normalizedHour = hour % 12;
-            const exactMinuteAngle = minute * 6;
-            const exactHourAngle = (normalizedHour * 30) + (minute * 0.5);
-
-            state.currentHourAngle = exactHourAngle;
-            state.currentMinuteAngle = exactMinuteAngle;
-
-            const hourHand = document.getElementById('hourHandGroup');
-            const minuteHand = document.getElementById('minuteHandGroup');
-            const hourGuide = document.getElementById('hourGuideGroup');
-
-            if (!animate) {
-                hourHand.classList.add('no-transition');
-                minuteHand.classList.add('no-transition');
-                hourGuide.classList.add('no-transition');
-            } else {
-                hourHand.classList.remove('no-transition');
-                minuteHand.classList.remove('no-transition');
-                hourGuide.classList.remove('no-transition');
-            }
-
-            hourHand.style.transform = `rotate(${exactHourAngle}deg)`;
-            minuteHand.style.transform = `rotate(${exactMinuteAngle}deg)`;
-            hourGuide.style.transform = `rotate(${exactHourAngle}deg)`;
-
-            // Update Hour Sector Pie Slice (between hour and nextHour)
-            updateHourSectorShape(hour);
-
-            // Highlight active hour number when sector helper is enabled
-            for (let h = 1; h <= 12; h++) {
-                const el = document.getElementById(`clockHourNum-${h}`);
-                if (el) {
-                    if (state.showHourSector && h === hour) {
-                        el.setAttribute('fill', '#E11D48');
-                        el.setAttribute('font-size', '33');
-                    } else {
-                        el.setAttribute('fill', '#1E293B');
-                        el.setAttribute('font-size', '28');
-                    }
-                }
-            }
-
-            // Update Live Principle Text & PRD Angle Inspector
-            updateAngleInspector(hour, minute, exactHourAngle, exactMinuteAngle);
-        }
-
-        function updateHourSectorShape(hour) {
-            const sectorPath = document.getElementById('hourSectorPath');
-            if (!state.showHourSector) {
-                sectorPath.classList.add('hidden');
-                document.getElementById('hourGuideGroup').classList.add('hidden');
-                return;
-            }
-
-            sectorPath.classList.remove('hidden');
-            document.getElementById('hourGuideGroup').classList.remove('hidden');
-
-            const cx = 200, cy = 200, r = 150;
-            const startAngleDeg = (hour % 12) * 30;
-            const endAngleDeg = startAngleDeg + 30;
-
-            const startRad = (startAngleDeg - 90) * (Math.PI / 180);
-            const endRad = (endAngleDeg - 90) * (Math.PI / 180);
-
-            const x1 = cx + r * Math.cos(startRad);
-            const y1 = cy + r * Math.sin(startRad);
-            const x2 = cx + r * Math.cos(endRad);
-            const y2 = cy + r * Math.sin(endRad);
-
-            const d = `M ${cx} ${cy} L ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 0 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z`;
-            sectorPath.setAttribute('d', d);
-        }
-
-        function updateAngleInspector(hour, minute, hourAngle, minuteAngle) {
-            const nextHour = hour === 12 ? 1 : hour + 1;
-            const modHour = hour % 12;
-
-            document.getElementById('inspectorHourAngle').textContent = `${hourAngle.toFixed(1)}°`;
-            document.getElementById('inspectorHourFormula').textContent =
-                `(${modHour} × 30°) + (${minute}분 × 0.5°) = ${hourAngle.toFixed(1)}°`;
-
-            document.getElementById('inspectorMinuteAngle').textContent = `${minuteAngle.toFixed(1)}°`;
-            document.getElementById('inspectorMinuteFormula').textContent =
-                `${minute}분 × 6° = ${minuteAngle.toFixed(1)}°`;
-
-            const liveText = document.getElementById('clockLivePrincipleText');
-            if (minute === 0) {
-                liveText.innerHTML = `✨ 정시(0분)일 때는 짧은바늘(시침)이 숫자 <b>${hour}</b>을(를) 정확히 가리켜요!`;
-            } else if (minute === 30) {
-                liveText.innerHTML = `✨ 30분일 때는 긴바늘이 반 바퀴(180°)를 돌아서, 짧은바늘도 <b>${hour}과(와) ${nextHour}의 정중앙</b>(${hourAngle.toFixed(1)}°)에 있어요!`;
-            } else {
-                const ratioPercent = Math.round((minute / 60) * 100);
-                liveText.innerHTML = `💡 분침이 <b>${minute}분</b>만큼 이동해서, 시침도 숫자 <b>${hour}</b>에서 <b>${nextHour}</b> 쪽으로 <b>${ratioPercent}%</b>(${(minute * 0.5).toFixed(1)}°)만큼 나아갔어요!`;
-            }
-        }
-
-        /***********************************************************************
-         * 5. DIFFICULTY & PROBLEM GENERATION
-         ***********************************************************************/
-        function setDifficulty(level) {
-            playSound('click');
-            state.mode = 'quiz';
-            state.difficulty = level;
-
-            // Update Tab UI
-            document.querySelectorAll('.level-tab').forEach(btn => {
-                btn.className = 'level-tab btn-3d rounded-2xl py-3 px-3 font-jua text-base sm:text-lg border-2 flex flex-col items-center justify-center gap-0.5 bg-white text-slate-600 border-slate-200 hover:bg-amber-50';
-            });
-            const activeTab = document.getElementById(`tabLevel${level}`);
-            if (activeTab) {
-                activeTab.className = 'level-tab btn-3d rounded-2xl py-3 px-3 font-jua text-base sm:text-lg border-2 flex flex-col items-center justify-center gap-0.5 bg-amber-400 text-slate-900 border-amber-500';
-            }
-
-            // Show Quiz Panel, Hide Explore Panel
-            document.getElementById('quizPanel').classList.remove('hidden');
-            document.getElementById('explorePanel').classList.add('hidden');
-            document.getElementById('badgeDifficulty').textContent = difficultyInfo[level].badge;
-
-            generateRandomQuestion(false);
-        }
-
-        function setExploreMode() {
-            playSound('click');
-            state.mode = 'explore';
-
-            document.querySelectorAll('.level-tab').forEach(btn => {
-                btn.className = 'level-tab btn-3d rounded-2xl py-3 px-3 font-jua text-base sm:text-lg border-2 flex flex-col items-center justify-center gap-0.5 bg-white text-slate-600 border-slate-200 hover:bg-amber-50';
-            });
-            const exploreTab = document.getElementById('tabExplore');
-            exploreTab.className = 'level-tab btn-3d col-span-2 sm:col-span-1 rounded-2xl py-3 px-3 font-jua text-base sm:text-lg border-2 flex flex-col items-center justify-center gap-0.5 bg-indigo-600 text-white border-indigo-700';
-
-            document.getElementById('quizPanel').classList.add('hidden');
-            document.getElementById('explorePanel').classList.remove('hidden');
-
-            // Default Explore Mode to 3:30 as highlighted in the PRD
-            if (!state.showHourSector) {
-                toggleHourSector();
-            }
-            setExplorePreset(3, 30);
-        }
-
-        function generateRandomQuestion(playSoundFlag = false) {
-            if (playSoundFlag) playSound('click');
-            state.isTransitioning = false;
-
-            const prevHour = state.targetHour;
-            const prevMinute = state.targetMinute;
-
-            let newHour = prevHour;
-            let newMinute = prevMinute;
-
-            // Ensure we always generate a different time from the current one
-            for (let attempt = 0; attempt < 20; attempt++) {
-                newHour = Math.floor(Math.random() * 12) + 1; // 1 ~ 12
-
-                if (state.difficulty === 1) {
-                    newMinute = 0;
-                } else if (state.difficulty === 2) {
-                    // In Level 2 (30분 단위), prioritize 30 minutes or alternate 00/30
-                    newMinute = Math.random() < 0.7 ? 30 : 0;
-                } else if (state.difficulty === 3) {
-                    newMinute = Math.floor(Math.random() * 12) * 5; // 0, 5, 10, ..., 55
-                } else {
-                    newMinute = Math.floor(Math.random() * 60); // 0 ~ 59
-                }
-
-                if (newHour !== prevHour || newMinute !== prevMinute) break;
-            }
-
-            state.targetHour = newHour;
-            state.targetMinute = newMinute;
-
-            // Clear inputs & feedback
-            const inputHour = document.getElementById('inputHour');
-            const inputMinute = document.getElementById('inputMinute');
-            inputHour.value = '';
-            // For Level 1 (정시), pre-fill 0 or keep empty so student practices typing 0
-            inputMinute.value = '';
-
-            hideFeedback();
-            renderClockHands(state.targetHour, state.targetMinute, true);
-            inputHour.focus();
-        }
-
-        /***********************************************************************
-         * 6. USER INPUT HELPERS & STEPPERS
-         ***********************************************************************/
-        function setActiveInput(field) {
-            state.activeInput = field;
-        }
-
-        function stepInput(field, delta) {
-            playSound('click');
-            const inputEl = document.getElementById(field === 'hour' ? 'inputHour' : 'inputMinute');
-            let currentVal = parseInt(inputEl.value, 10);
-
-            if (field === 'hour') {
-                if (isNaN(currentVal)) currentVal = 12;
-                currentVal += delta;
-                if (currentVal > 12) currentVal = 1;
-                if (currentVal < 1) currentVal = 12;
-            } else {
-                // Step size adapts to difficulty level unless fine-tuning
-                const stepSize = (state.difficulty === 1) ? 0 :
-                                 (state.difficulty === 2) ? 30 :
-                                 (state.difficulty === 3) ? 5 : 1;
-                const actualStep = stepSize === 0 ? 1 : stepSize * delta;
-
-                if (isNaN(currentVal)) {
-                    currentVal = delta > 0 ? 0 : 60 + actualStep;
-                } else {
-                    currentVal += actualStep;
-                }
-                if (currentVal >= 60) currentVal = currentVal % 60;
-                if (currentVal < 0) currentVal = 60 + (currentVal % 60);
-            }
-
-            inputEl.value = currentVal;
-        }
-
-        function setQuickValue(field, val) {
-            playSound('click');
-            const inputEl = document.getElementById(field === 'hour' ? 'inputHour' : 'inputMinute');
-            inputEl.value = val;
-        }
-
-        /***********************************************************************
-         * 7. ANSWER CHECKING, HINTS & FEEDBACK
-         ***********************************************************************/
-        function checkAnswer() {
-            if (state.isTransitioning) return;
-
-            const hourStr = document.getElementById('inputHour').value.trim();
-            const minStr = document.getElementById('inputMinute').value.trim();
-
-            const userHour = parseInt(hourStr, 10);
-            // If minute is left blank on Level 1, treat empty as needing input or 0 if user typed 0
-            const userMinute = minStr === '' ? NaN : parseInt(minStr, 10);
-
-            if (isNaN(userHour) || userHour < 1 || userHour > 12 || isNaN(userMinute) || userMinute < 0 || userMinute > 59) {
-                showFeedback(
-                    'warn',
-                    '시와 분 숫자를 모두 입력해 주세요! 😊',
-                    '짧은바늘(시) 칸에는 1~12 사이의 숫자를, 긴바늘(분) 칸에는 0~59 사이의 숫자를 넣어보세요. 정시일 때는 분 칸에 0을 입력하면 돼요!'
-                );
-                playSound('wrong');
-                return;
-            }
-
-            state.totalCount++;
-            const isCorrect = (userHour === state.targetHour && userMinute === state.targetMinute);
-
-            if (isCorrect) {
-                state.correctCount++;
-                updateScoreboardUI();
-                playSound('correct');
-
-                state.isTransitioning = true;
-                launchCelebrationEffects();
-
-                const nextHour = state.targetHour === 12 ? 1 : state.targetHour + 1;
-                const praiseMsg = state.targetMinute === 0
-                    ? `정답이에요! 짧은바늘이 ${state.targetHour}, 긴바늘이 12(0분)를 가리키는 <b>${state.targetHour}시 정각(0분)</b>입니다!`
-                    : `참 잘했어요! 짧은바늘이 ${state.targetHour}과 ${nextHour} 사이에 있고, 긴바늘이 작은 눈금 ${state.targetMinute}칸을 이동한 <b>${state.targetHour}시 ${state.targetMinute}분</b>입니다!`;
-
-                showFeedback('correct', '딩동댕! 정답입니다! 🎈🎉', praiseMsg + ' <br><span class="text-xs text-emerald-700 font-bold">(잠시 후 다음 문제가 자동으로 나와요...)</span>');
-
-                setTimeout(() => {
-                    if (state.mode === 'quiz') {
-                        generateRandomQuestion(false);
-                    }
-                }, 1800);
-            } else {
-                state.wrongCount++;
-                updateScoreboardUI();
-                playSound('wrong');
-
-                // Gentle shake animation on input container
-                const card = document.getElementById('inputCardContainer');
-                card.classList.remove('shake');
-                void card.offsetWidth;
-                card.classList.add('shake');
-
-                // Auto-enable visual scaffolding so student immediately sees why
-                if (!state.showHourSector) toggleHourSector(true);
-                if (!state.showMinuteHelpers && state.targetMinute > 0) toggleMinuteHelpers(true);
-
-                const nextHour = state.targetHour === 12 ? 1 : state.targetHour + 1;
-                let specificCoaching = '';
-
-                // Detect common elementary misconception: reading the next hour when minute >= 30
-                if (userHour === nextHour && userMinute === state.targetMinute) {
-                    specificCoaching = `❗ <b>오개념 주의 힌트:</b> 짧은바늘(시침)이 숫자 <b>${nextHour}</b>에 가까워 보이지만, 아직 <b>${nextHour}</b>에 도착하지 않았어요! <b>${state.targetHour}</b>과(와) <b>${nextHour}</b> 사이에 있으므로 <b>${state.targetHour}시</b>랍니다.`;
-                } else if (userHour !== state.targetHour && userMinute === state.targetMinute) {
-                    specificCoaching = `✔ 긴바늘(분)은 <b>${state.targetMinute}분</b>으로 정확히 읽었어요! 짧은바늘(시침)이 어느 숫자를 지났는지 다시 확인해 볼까요?`;
-                } else if (userHour === state.targetHour && userMinute !== state.targetMinute) {
-                    specificCoaching = `✔ 짧은바늘(시)은 <b>${state.targetHour}시</b>로 정확히 읽었어요! 긴바늘(분침)이 숫자 12에서부터 작은 눈금 몇 칸을 갔는지 세어 보세요.`;
-                }
-
-                const detailHtml = `
-                    <p class="font-bold text-rose-700">📌 정답 안내: <span class="underline">${state.targetHour}시 ${state.targetMinute}분</span></p>
-                    ${specificCoaching ? `<p class="text-slate-700">${specificCoaching}</p>` : ''}
-                    <p class="text-slate-600">① <b>짧은바늘(시침):</b> 숫자 <b>${state.targetHour}</b>에서 <b>${nextHour}</b> 사이(분홍색 영역)에 있으므로 <b>${state.targetHour}시</b>예요.</p>
-                    <p class="text-slate-600">② <b>긴바늘(분침):</b> 12에서 시작해 작은 눈금 <b>${state.targetMinute}칸</b>(${state.targetMinute * 6}°) 이동했으므로 <b>${state.targetMinute}분</b>이에요.</p>
-                `;
-
-                showFeedback(
-                    'wrong',
-                    '아깝네요! 힌트를 보고 다시 한번 확인해 볼까요? 💪',
-                    `입력한 답: <b>${userHour}시 ${userMinute}분</b> → 시계의 분홍색 영역과 바깥 숫자를 확인해 보세요!`,
-                    detailHtml
-                );
-            }
-        }
-
-        function showStepHint() {
-            playSound('click');
-            if (!state.showHourSector) toggleHourSector(true);
-            if (!state.showMinuteHelpers) toggleMinuteHelpers(true);
-
-            const nextHour = state.targetHour === 12 ? 1 : state.targetHour + 1;
-            const detailHtml = `
-                <p class="text-rose-700"><b>1단계 (짧은바늘 읽기):</b> 짧은바늘이 숫자 <b>${state.targetHour}</b>과(와) <b>${nextHour}</b> 사이에 있어요. 아직 ${nextHour}이 되지 않았으니 <b>${state.targetHour}시</b>예요!</p>
-                <p class="text-sky-700"><b>2단계 (긴바늘 읽기):</b> 시계 바깥의 파란색 동그라미 숫자를 보세요! 긴바늘이 가리키는 눈금은 <b>${state.targetMinute}분</b>이에요.</p>
-            `;
-
-            showFeedback(
-                'hint',
-                '💡 시계 박사님의 단계별 힌트!',
-                '시계에 분홍색 시침 영역과 바깥 분(5~60) 도움말 숫자를 켰어요!',
-                detailHtml
-            );
-        }
-
-        function showFeedback(type, title, message, detailHtml = '') {
-            const box = document.getElementById('feedbackBox');
-            const icon = document.getElementById('feedbackIcon');
-            const titleEl = document.getElementById('feedbackTitle');
-            const msgEl = document.getElementById('feedbackMessage');
-            const detailEl = document.getElementById('feedbackDetailHint');
-
-            box.classList.remove('hidden', 'bg-emerald-50', 'border-emerald-300', 'bg-rose-50', 'border-rose-300', 'bg-amber-50', 'border-amber-300');
-
-            if (type === 'correct') {
-                box.classList.add('bg-emerald-50', 'border-emerald-300');
-                icon.textContent = '🎉';
-                titleEl.className = 'font-jua text-xl text-emerald-800';
-                msgEl.className = 'text-sm sm:text-base mt-1 text-emerald-900';
-            } else if (type === 'wrong') {
-                box.classList.add('bg-rose-50', 'border-rose-300');
-                icon.textContent = '🧐';
-                titleEl.className = 'font-jua text-xl text-rose-700';
-                msgEl.className = 'text-sm sm:text-base mt-1 text-rose-900';
-            } else {
-                box.classList.add('bg-amber-50', 'border-amber-300');
-                icon.textContent = '💡';
-                titleEl.className = 'font-jua text-xl text-amber-900';
-                msgEl.className = 'text-sm sm:text-base mt-1 text-amber-900';
-            }
-
-            titleEl.innerHTML = title;
-            msgEl.innerHTML = message;
-
-            if (detailHtml) {
-                detailEl.innerHTML = detailHtml;
-                detailEl.classList.remove('hidden');
-            } else {
-                detailEl.classList.add('hidden');
-            }
-        }
-
-        function hideFeedback() {
-            document.getElementById('feedbackBox').classList.add('hidden');
-        }
-
-        function updateScoreboardUI() {
-            document.getElementById('statTotal').textContent = state.totalCount;
-            document.getElementById('statCorrect').textContent = state.correctCount;
-            document.getElementById('statWrong').textContent = state.wrongCount;
-        }
-
-        function resetStats() {
-            playSound('click');
-            state.totalCount = 0;
-            state.correctCount = 0;
-            state.wrongCount = 0;
-            updateScoreboardUI();
-        }
-
-        /***********************************************************************
-         * 8. SCAFFOLDING TOGGLES & EXPLORE LAB CONTROLS
-         ***********************************************************************/
-        function toggleMinuteHelpers(forceOn = false) {
-            state.showMinuteHelpers = forceOn ? true : !state.showMinuteHelpers;
-            const group = document.getElementById('minuteHelperNumbersGroup');
-            const btnText = document.getElementById('txtMinHelper');
-
-            if (state.showMinuteHelpers) {
-                group.classList.remove('hidden');
-                btnText.textContent = '바깥 분(5~60) 숨기기';
-            } else {
-                group.classList.add('hidden');
-                btnText.textContent = '바깥 분(5~60) 보기';
-            }
-        }
-
-        function toggleHourSector(forceOn = false) {
-            state.showHourSector = forceOn ? true : !state.showHourSector;
-            const btnText = document.getElementById('txtSectorHelper');
-            btnText.textContent = state.showHourSector ? '시침 영역 끄기' : '시침 영역 색칠';
-            renderClockHands(state.targetHour, state.targetMinute, false);
-        }
-
-        function updateFromExploreSliders() {
-            const h = parseInt(document.getElementById('sliderHour').value, 10);
-            const m = parseInt(document.getElementById('sliderMinute').value, 10);
-
-            state.targetHour = h;
-            state.targetMinute = m;
-
-            document.getElementById('lblSliderHour').textContent = `${h}시`;
-            document.getElementById('lblSliderMinute').textContent = `${m}분`;
-            document.getElementById('exploreTimeDisplay').textContent = `${h}시 ${String(m).padStart(2, '0')}분`;
-
-            renderClockHands(h, m, false);
-        }
-
-        function setExplorePreset(h, m) {
-            playSound('click');
-            if (state.mode !== 'explore') {
-                setExploreMode();
-            }
-            document.getElementById('sliderHour').value = h;
-            document.getElementById('sliderMinute').value = m;
-            state.targetHour = h;
-            state.targetMinute = m;
-
-            document.getElementById('lblSliderHour').textContent = `${h}시`;
-            document.getElementById('lblSliderMinute').textContent = `${m}분`;
-            document.getElementById('exploreTimeDisplay').textContent = `${h}시 ${String(m).padStart(2, '0')}분`;
-
-            renderClockHands(h, m, true);
-        }
-
-        /***********************************************************************
-         * 9. CELEBRATORY BALLOONS & FIREWORKS CONFETTI (저학년 맞춤 애니메이션)
-         ***********************************************************************/
-        function launchCelebrationEffects() {
-            spawnFloatingBalloons();
-            launchConfettiFireworks();
-        }
-
-        function spawnFloatingBalloons() {
-            const container = document.getElementById('balloonContainer');
-            container.innerHTML = '';
-            const balloonEmojis = ['🎈', '🎈', '🎈', '🎉', '⭐', '🌟', '🥳'];
-            const colors = ['#FF595E', '#FFCA3A', '#8AC926', '#1982C4', '#6A4C93'];
-
-            for (let i = 0; i < 14; i++) {
-                const el = document.createElement('div');
-                el.className = 'balloon-item flex flex-col items-center';
-                const leftPos = 5 + Math.random() * 90;
-                const delay = Math.random() * 0.45;
-                const size = 2.2 + Math.random() * 1.3;
-
-                el.style.left = `${leftPos}%`;
-                el.style.animationDelay = `${delay}s`;
-                el.style.fontSize = `${size}rem`;
-                el.textContent = balloonEmojis[i % balloonEmojis.length];
-                el.style.filter = `drop-shadow(0 6px 8px ${colors[i % colors.length]}55)`;
-
-                container.appendChild(el);
-            }
-
-            setTimeout(() => {
-                container.innerHTML = '';
-            }, 2600);
-        }
-
-        function launchConfettiFireworks() {
-            const canvas = document.getElementById('confettiCanvas');
-            const ctx = canvas.getContext('2d');
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-
-            const particles = [];
-            const colors = ['#FF595E', '#FFCA3A', '#8AC926', '#1982C4', '#FF924C', '#B5179E'];
-
-            for (let i = 0; i < 95; i++) {
-                const angle = Math.random() * Math.PI * 2;
-                const speed = 4 + Math.random() * 11;
-                particles.push({
-                    x: canvas.width / 2,
-                    y: canvas.height * 0.42,
-                    vx: Math.cos(angle) * speed,
-                    vy: Math.sin(angle) * speed - 3,
-                    size: 7 + Math.random() * 7,
-                    color: colors[Math.floor(Math.random() * colors.length)],
-                    rotation: Math.random() * 360,
-                    rotSpeed: (Math.random() - 0.5) * 12,
-                    alpha: 1
-                });
-            }
-
-            let frame = 0;
-            function animateConfetti() {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                let active = false;
-
-                particles.forEach(p => {
-                    p.x += p.vx;
-                    p.y += p.vy;
-                    p.vy += 0.28; // gravity
-                    p.rotation += p.rotSpeed;
-                    if (frame > 35) p.alpha -= 0.025;
-
-                    if (p.alpha > 0) {
-                        active = true;
-                        ctx.save();
-                        ctx.globalAlpha = Math.max(0, p.alpha);
-                        ctx.translate(p.x, p.y);
-                        ctx.rotate((p.rotation * Math.PI) / 180);
-                        ctx.fillStyle = p.color;
-                        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.65);
-                        ctx.restore();
-                    }
-                });
-
-                frame++;
-                if (active && frame < 95) {
-                    requestAnimationFrame(animateConfetti);
-                } else {
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                }
-            }
-
-            requestAnimationFrame(animateConfetti);
-        }
-
-        /***********************************************************************
-         * 10. KEYBOARD SHORTCUTS & INITIALIZATION
-         ***********************************************************************/
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && state.mode === 'quiz') {
-                checkAnswer();
-            }
-        });
-
-        window.onload = function () {
-            buildClockFace();
-            setDifficulty(1);
-        };
-    </script>
+      });
+    }
+
+    /* =====================================================================
+     * 6. 초기 실행 (URL 파라미터 체크)
+     * ===================================================================== */
+    window.addEventListener('DOMContentLoaded', () => {
+      loadStudents(); // 샘플 데이터 초기화 보장
+      const params = new URLSearchParams(window.location.search);
+      const page = (params.get('page') || '').toLowerCase();
+      if (page === 'dashboard') {
+        switchTab('dashboard');
+      } else {
+        switchTab('survey');
+      }
+    });
+  </script>
 </body>
 </html>
