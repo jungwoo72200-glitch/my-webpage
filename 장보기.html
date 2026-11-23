@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>우리 반 스마트 장보기 미션 | 초등 합리적 소비 교육 앱</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Noto Sans KR Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    /* 기본 폰트 및 배경 설정 */
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background-color: #fffdf6;
+      color: #1e293b;
+    }
+
+    /* 숫자 정렬 고정폭 */
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* 커스텀 스크롤바 */
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #f8fafc;
+      border-radius: 999px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 999px;
+    }
+
+    /* 마트 영수증 하단 지그재그 장식 */
+    .receipt-edge {
+      position: relative;
+    }
+    .receipt-edge::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      bottom: -10px;
+      width: 100%;
+      height: 10px;
+      background: radial-gradient(circle at 10px 0, transparent 7px, #ffffff 7.5px);
+      background-size: 20px 10px;
+      background-repeat: repeat-x;
+    }
+
+    /* 토스트 애니메이션 */
+    @keyframes popIn {
+      0% { opacity: 0; transform: translate(-50%, 16px) scale(0.95); }
+      100% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+    }
+    .toast-pop {
+      animation: popIn 0.25s ease-out forwards;
+    }
+
+    /* A4 PDF 인쇄 전용 스타일 */
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 14mm;
+      }
+      body {
+        background-color: #ffffff !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      #resultView {
+        display: block !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
+      }
+      #printTargetArea {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 20px !important;
+        align-items: start !important;
+      }
+      .receipt-card-print {
+        box-shadow: none !important;
+        border: 1.5px solid #cbd5e1 !important;
+      }
+      .receipt-edge::after {
+        display: none !important;
+      }
+      .print-break-avoid {
+        break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- ==================== 상단 헤더 & 스텝 인디케이터 ==================== -->
+  <header class="no-print bg-white/95 backdrop-blur-md border-b border-amber-200/70 sticky top-0 z-40 shadow-sm">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <!-- 앱 로고 -->
+      <button onclick="goToStart()" class="flex items-center gap-2.5 text-left group">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-400 text-white flex items-center justify-center text-xl shadow-sm group-hover:scale-105 transition-transform">
+          🛒
+        </div>
+        <div>
+          <h1 class="text-base sm:text-lg font-extrabold text-slate-800 leading-tight">우리 반 스마트 장보기 미션</h1>
+          <p class="text-[11px] sm:text-xs font-medium text-slate-500">예산 안에서 똑똑하게 골라보는 합리적 소비 교실</p>
+        </div>
+      </button>
+
+      <!-- 3단계 스텝 인디케이터 -->
+      <nav aria-label="진행 단계" class="flex items-center justify-between sm:justify-end gap-1.5 sm:gap-2 bg-amber-50/80 border border-amber-200/60 px-3 py-1.5 rounded-2xl">
+        <div id="stepBadge1" class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-extrabold transition-all">
+          <span class="w-5 h-5 rounded-full flex items-center justify-center text-[11px]">1</span>
+          <span>미션 선택</span>
+        </div>
+        <span class="text-amber-300 font-bold text-xs">→</span>
+        <div id="stepBadge2" class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-extrabold transition-all">
+          <span class="w-5 h-5 rounded-full flex items-center justify-center text-[11px]">2</span>
+          <span>스마트 장보기</span>
+        </div>
+        <span class="text-amber-300 font-bold text-xs">→</span>
+        <div id="stepBadge3" class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-extrabold transition-all">
+          <span class="w-5 h-5 rounded-full flex items-center justify-center text-[11px]">3</span>
+          <span>영수증 &amp; 이유</span>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ==================== 메인 콘텐츠 영역 ==================== -->
+  <main class="flex-1 w-full">
+
+    <!-- ==================== STEP 1: 시작 화면 (미션 선택) ==================== -->
+    <section id="startView" class="no-print max-w-5xl mx-auto px-4 sm:px-6 py-7 sm:py-10">
+      <!-- 환영 배너 & 학생 이름 입력 -->
+      <div class="bg-gradient-to-br from-amber-50 via-white to-emerald-50 border-2 border-amber-200/80 rounded-3xl p-6 sm:p-8 shadow-sm mb-8">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div class="space-y-2">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-extrabold">
+              ✨ 초등 실생활 경제 교실
+            </span>
+            <h2 class="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight">
+              오늘의 장보기 미션을 골라보세요!
+            </h2>
+            <p class="text-sm sm:text-base text-slate-600 leading-relaxed">
+              주어진 예산을 넘지 않도록 꼭 필요한 물건을 골라 담고,<br class="hidden sm:inline">
+              마지막 영수증에 <strong class="text-amber-700">내가 이 물건들을 선택한 이유</strong>를 적어 보아요.
+            </p>
+          </div>
+
+          <!-- 학생 이름 입력 카드 -->
+          <div class="w-full md:w-72 bg-white rounded-2xl border border-amber-200 p-4 shadow-sm shrink-0">
+            <label for="studentNameInput" class="block text-xs font-extrabold text-slate-600 mb-1.5">
+              👤 학생 이름 (영수증에 표시돼요)
+            </label>
+            <input type="text" id="studentNameInput" placeholder="예: 5학년 2반 김민수" autocomplete="off"
+              class="w-full px-3.5 py-2.5 rounded-xl border-2 border-slate-200 focus:border-amber-400 focus:outline-none text-sm font-semibold transition-colors">
+            <p class="text-[11px] text-slate-400 mt-1.5">입력하지 않으면 '우리 반 학생'으로 표시돼요.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3가지 미션 선택 카드 그리드 -->
+      <div class="mb-4 flex items-center justify-between">
+        <h3 class="text-lg font-extrabold text-slate-800 flex items-center gap-2">
+          <span>🎯</span> 도전할 미션 선택하기
+        </h3>
+        <span class="text-xs font-semibold text-slate-500">카드를 누르면 바로 마트로 입장해요!</span>
+      </div>
+
+      <div id="missionCardsGrid" class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-12">
+        <!-- JS로 미션 카드 3종 렌더링 -->
+      </div>
+
+      <!-- 나의 장보기 기록 (localStorage) -->
+      <div class="bg-white rounded-3xl border border-slate-200 p-5 sm:p-7 shadow-sm">
+        <div class="flex items-center justify-between gap-3 mb-4">
+          <div>
+            <h3 class="text-base sm:text-lg font-extrabold text-slate-800 flex items-center gap-2">
+              <span>🧾</span> 나의 장보기 기록
+            </h3>
+            <p class="text-xs text-slate-500 mt-0.5">이전에 완료한 영수증과 구매 이유를 다시 열어볼 수 있어요.</p>
+          </div>
+          <button id="btnClearHistory" onclick="openClearHistoryModal()" class="hidden px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-500 text-xs font-bold transition-colors">
+            기록 모두 지우기
+          </button>
+        </div>
+
+        <div id="historyListContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+          <!-- JS로 기록 렌더링 -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== STEP 2: 쇼핑 화면 (상품 진열 & 장바구니) ==================== -->
+    <section id="shopView" class="hidden no-print max-w-6xl mx-auto px-4 sm:px-6 py-5 sm:py-6">
+
+      <!-- 상단 고정 예산 현황 바 -->
+      <div id="budgetStatusBar" class="sticky top-[106px] sm:top-[68px] z-30 bg-white/95 backdrop-blur-md rounded-3xl border-2 border-emerald-200 p-4 sm:p-5 shadow-md mb-6 transition-colors">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-3">
+          <div class="flex items-center gap-2.5 flex-wrap">
+            <button onclick="goToStart()" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold transition-colors">
+              ← 미션 바꾸기
+            </button>
+            <span id="shopMissionBadge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs sm:text-sm font-extrabold">
+              🍛 카레 만들기
+            </span>
+            <span id="shopItemCountBadge" class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold tabular-nums">
+              담은 상품 0개
+            </span>
+          </div>
+
+          <!-- 예산 / 사용금액 / 남은잔액 수치 -->
+          <div class="grid grid-cols-3 gap-2 sm:gap-5 text-center sm:text-right bg-slate-50 sm:bg-transparent p-2.5 sm:p-0 rounded-2xl">
+            <div>
+              <span class="block text-[11px] font-bold text-slate-400">총 예산</span>
+              <strong id="statBudget" class="text-sm sm:text-base font-extrabold text-slate-700 tabular-nums">0원</strong>
+            </div>
+            <div>
+              <span class="block text-[11px] font-bold text-slate-400">사용 금액</span>
+              <strong id="statSpent" class="text-sm sm:text-base font-extrabold text-amber-600 tabular-nums">0원</strong>
+            </div>
+            <div>
+              <span class="block text-[11px] font-bold text-slate-400">남은 잔액</span>
+              <strong id="statRemain" class="text-sm sm:text-base font-extrabold text-emerald-600 tabular-nums">0원</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- 예산 사용률 프로그레스 바 -->
+        <div class="w-full h-3.5 bg-slate-100 rounded-full overflow-hidden">
+          <div id="budgetProgressBar" class="h-full bg-gradient-to-r from-emerald-400 to-teal-500 rounded-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+
+        <!-- 예산 초과 경고 배너 (초과 시 노출) -->
+        <div id="overBudgetAlert" class="hidden mt-3 flex items-center gap-2 bg-rose-50 border border-rose-200 text-rose-700 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-extrabold animate-pulse">
+          <span class="text-base">🚨</span>
+          <span id="overBudgetAlertText">예산을 초과했어요! 수량을 줄여 주세요.</span>
+        </div>
+      </div>
+
+      <!-- 2단 레이아웃: 좌측 상품 진열대 / 우측 실시간 장바구니 -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+        <!-- 좌측: 카테고리 필터 & 상품 그리드 -->
+        <div class="lg:col-span-8">
+          <!-- 카테고리 필터 버튼 -->
+          <div id="categoryFilterBar" class="flex items-center gap-2 overflow-x-auto pb-2 mb-4">
+            <!-- JS로 렌더링 -->
+          </div>
+
+          <!-- 상품 카드 그리드 -->
+          <div id="productsGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-3.5 sm:gap-4">
+            <!-- JS로 12개 상품 렌더링 -->
+          </div>
+        </div>
+
+        <!-- 우측: 실시간 장바구니 요약 패널 -->
+        <aside class="lg:col-span-4 lg:sticky lg:top-[225px] bg-white rounded-3xl border-2 border-slate-200 p-5 shadow-sm">
+          <div class="flex items-center justify-between pb-3.5 border-b border-slate-100 mb-3.5">
+            <h3 class="text-base font-extrabold text-slate-800 flex items-center gap-1.5">
+              <span>🛍️</span> 내 장바구니
+            </h3>
+            <button id="btnEmptyCart" onclick="emptyCart()" class="text-xs font-bold text-slate-400 hover:text-rose-500 transition-colors">
+              전체 비우기
+            </button>
+          </div>
+
+          <!-- 장바구니 아이템 목록 -->
+          <div id="cartItemsList" class="space-y-2.5 max-h-[320px] overflow-y-auto custom-scroll pr-1 mb-4">
+            <!-- JS 렌더링 -->
+          </div>
+
+          <!-- 장바구니 합계 요약 -->
+          <div class="bg-amber-50/70 rounded-2xl p-3.5 border border-amber-100 space-y-1.5 mb-4">
+            <div class="flex justify-between text-xs font-bold text-slate-500">
+              <span>총 담은 수량</span>
+              <span id="cartTotalQty" class="tabular-nums text-slate-700">0개</span>
+            </div>
+            <div class="flex justify-between text-sm font-extrabold text-slate-800">
+              <span>결제 예정 금액</span>
+              <span id="cartTotalPrice" class="tabular-nums text-amber-700">0원</span>
+            </div>
+          </div>
+
+          <!-- 계산대로 가기 (제출하기) 버튼 -->
+          <button id="btnGoToCheckout" disabled onclick="goToResult()"
+            class="w-full py-3.5 rounded-2xl font-extrabold text-sm sm:text-base transition-all bg-emerald-500 hover:bg-emerald-600 active:scale-[0.99] text-white shadow-md shadow-emerald-200 disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none disabled:cursor-not-allowed">
+            🧾 계산대로 가기 (제출하기)
+          </button>
+          <p id="checkoutHintText" class="text-[11px] text-center font-semibold text-slate-400 mt-2">
+            물건을 1개 이상 담아야 계산대로 갈 수 있어요.
+          </p>
+        </aside>
+
+      </div>
+    </section>
+
+    <!-- ==================== STEP 3: 결과 화면 (영수증 & 구매 이유) ==================== -->
+    <section id="resultView" class="hidden max-w-5xl mx-auto px-4 sm:px-6 py-7 sm:py-10">
+
+      <!-- 상단 완료 안내 (인쇄 시 숨김) -->
+      <div class="no-print flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+        <div>
+          <span class="inline-block px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-extrabold mb-1.5">
+            🎉 장보기 미션 완료!
+          </span>
+          <h2 class="text-xl sm:text-2xl font-black text-slate-800">스마트 장보기 영수증 &amp; 나의 소비 일기</h2>
+        </div>
+        <button id="btnBackToShop" onclick="backToShopFromResult()" class="self-start sm:self-auto px-4 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 text-xs sm:text-sm font-bold transition-colors">
+          ← 장바구니 수정하기
+        </button>
+      </div>
+
+      <!-- 인쇄 대상 2단 영역: 좌측 마트 영수증 / 우측 구매 이유 & 자기점검 -->
+      <div id="printTargetArea" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start mb-8">
+
+        <!-- 좌측: 실제 마트 영수증 느낌의 요약 카드 -->
+        <div class="lg:col-span-6 print-break-avoid">
+          <div class="receipt-card-print receipt-edge bg-white rounded-t-3xl border border-slate-200 shadow-md p-6 sm:p-7">
+            <!-- 영수증 헤더 -->
+            <div class="text-center pb-4 border-b-2 border-dashed border-slate-200 mb-4">
+              <div class="text-2xl mb-1" id="rcptMissionEmoji">🍛</div>
+              <p class="text-[11px] font-extrabold tracking-widest text-amber-600 uppercase">SMART MART RECEIPT</p>
+              <h3 id="rcptMissionTitle" class="text-xl font-black text-slate-800 mt-0.5">카레 만들기 미션</h3>
+              <div class="flex items-center justify-center gap-3 text-xs text-slate-500 font-medium mt-2">
+                <span id="rcptStudentName">👤 우리 반 학생</span>
+                <span>·</span>
+                <span id="rcptDateTime">2026-11-23 17:11</span>
+              </div>
+            </div>
+
+            <!-- 구매 품목 테이블 -->
+            <div class="mb-4">
+              <div class="grid grid-cols-12 text-[11px] font-extrabold text-slate-400 pb-2 border-b border-slate-100">
+                <span class="col-span-5">품목명</span>
+                <span class="col-span-2 text-center">수량</span>
+                <span class="col-span-2 text-right">단가</span>
+                <span class="col-span-3 text-right">금액</span>
+              </div>
+              <div id="rcptItemsBody" class="divide-y divide-slate-100 text-xs sm:text-sm">
+                <!-- JS 렌더링 -->
+              </div>
+            </div>
+
+            <!-- 합계 및 잔액 요약 -->
+            <div class="pt-4 border-t-2 border-dashed border-slate-200 space-y-2">
+              <div class="flex justify-between text-xs sm:text-sm font-semibold text-slate-500">
+                <span>주어진 예산</span>
+                <span id="rcptBudget" class="tabular-nums">0원</span>
+              </div>
+              <div class="flex justify-between text-base sm:text-lg font-black text-slate-800">
+                <span>총 사용 금액</span>
+                <span id="rcptSpent" class="tabular-nums text-amber-600">0원</span>
+              </div>
+              <div class="flex justify-between text-sm sm:text-base font-extrabold text-emerald-600">
+                <span>남은 잔액</span>
+                <span id="rcptRemain" class="tabular-nums">0원</span>
+              </div>
+              <div class="mt-3 bg-emerald-50 border border-emerald-100 rounded-2xl px-4 py-2.5 flex items-center justify-between">
+                <span class="text-xs font-extrabold text-emerald-800">💡 나의 예산 절약률</span>
+                <span id="rcptSaveRate" class="text-sm font-black text-emerald-700 tabular-nums">0%</span>
+              </div>
+            </div>
+
+            <!-- 영수증 하단 바코드 장식 -->
+            <div class="mt-6 pt-4 border-t border-slate-100 text-center">
+              <div class="inline-flex items-end gap-[2px] h-7 opacity-40 mb-1" aria-hidden="true">
+                <span class="w-[2px] h-full bg-slate-800"></span>
+                <span class="w-[4px] h-full bg-slate-800"></span>
+                <span class="w-[1px] h-full bg-slate-800"></span>
+                <span class="w-[3px] h-full bg-slate-800"></span>
+                <span class="w-[2px] h-full bg-slate-800"></span>
+                <span class="w-[5px] h-full bg-slate-800"></span>
+                <span class="w-[2px] h-full bg-slate-800"></span>
+                <span class="w-[1px] h-full bg-slate-800"></span>
+                <span class="w-[4px] h-full bg-slate-800"></span>
+                <span class="w-[2px] h-full bg-slate-800"></span>
+                <span class="w-[3px] h-full bg-slate-800"></span>
+                <span class="w-[1px] h-full bg-slate-800"></span>
+                <span class="w-[4px] h-full bg-slate-800"></span>
+                <span class="w-[2px] h-full bg-slate-800"></span>
+                <span class="w-[3px] h-full bg-slate-800"></span>
+              </div>
+              <p class="text-[11px] font-semibold text-slate-400">똑똑한 소비 습관을 응원합니다! 🌟</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 우측: 구매 이유 서술 및 합리적 소비 자기점검 -->
+        <div class="lg:col-span-6 space-y-5 print-break-avoid">
+          <!-- 구매 이유 입력 카드 -->
+          <div class="receipt-card-print bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
+            <div class="flex items-center justify-between mb-2">
+              <label for="reasonTextarea" class="text-base font-extrabold text-slate-800 flex items-center gap-1.5">
+                <span>✍️</span> 나의 구매 이유 작성하기
+              </label>
+              <span id="reasonCharCount" class="no-print text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-0.5 rounded-full tabular-nums">
+                0자
+              </span>
+            </div>
+            <p class="text-xs text-slate-500 mb-3 leading-relaxed">
+              이 물건들을 선택한 이유와 예산을 지키기 위해 어떤 고민을 했는지 자유롭게 작성해 주세요.
+            </p>
+
+            <!-- 화면용 입력창 (인쇄 시 숨김) -->
+            <textarea id="reasonTextarea" rows="6" oninput="handleReasonUpdate()"
+              placeholder="예: 카레를 만들기 위해 꼭 필요한 카레가루, 돼지고기, 감자, 당근, 양파를 먼저 담았어요. 초콜릿도 먹고 싶었지만 예산이 부족해서 꼭 필요한 재료만 사기로 결정했어요!"
+              class="no-print w-full p-4 rounded-2xl border-2 border-slate-200 focus:border-amber-400 focus:outline-none text-sm leading-relaxed text-slate-700 resize-y bg-amber-50/20"></textarea>
+
+            <!-- 인쇄 전용 서술 텍스트 박스 (긴 글도 잘림 없이 출력) -->
+            <div id="reasonPrintMirror" class="hidden print:block min-h-[120px] p-4 rounded-2xl border border-slate-200 bg-slate-50 text-sm leading-relaxed text-slate-800 whitespace-pre-wrap">
+              작성된 구매 이유가 없습니다.
+            </div>
+          </div>
+
+          <!-- 합리적 소비 자기점검 체크박스 3개 -->
+          <div class="receipt-card-print bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
+            <h4 class="text-base font-extrabold text-slate-800 mb-3 flex items-center gap-1.5">
+              <span>✅</span> 합리적 소비 자기점검
+            </h4>
+            <div class="space-y-2.5">
+              <label class="flex items-center gap-3 p-3 rounded-2xl border border-slate-200 hover:bg-emerald-50/50 cursor-pointer transition-colors">
+                <input type="checkbox" id="chkPlan" onchange="handleReasonUpdate()"
+                  class="w-5 h-5 rounded accent-emerald-500 cursor-pointer shrink-0">
+                <span class="text-xs sm:text-sm font-bold text-slate-700">예산 안에서 계획적으로 골랐어요</span>
+              </label>
+
+              <label class="flex items-center gap-3 p-3 rounded-2xl border border-slate-200 hover:bg-emerald-50/50 cursor-pointer transition-colors">
+                <input type="checkbox" id="chkNeed" onchange="handleReasonUpdate()"
+                  class="w-5 h-5 rounded accent-emerald-500 cursor-pointer shrink-0">
+                <span class="text-xs sm:text-sm font-bold text-slate-700">미션에 꼭 필요한 물건을 먼저 담았어요</span>
+              </label>
+
+              <label class="flex items-center gap-3 p-3 rounded-2xl border border-slate-200 hover:bg-emerald-50/50 cursor-pointer transition-colors">
+                <input type="checkbox" id="chkImpulse" onchange="handleReasonUpdate()"
+                  class="w-5 h-5 rounded accent-emerald-500 cursor-pointer shrink-0">
+                <span class="text-xs sm:text-sm font-bold text-slate-700">충동구매를 줄이려고 고민했어요</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 하단 결과 내보내기 / 저장 액션 버튼 4종 (인쇄 시 숨김) -->
+      <div class="no-print bg-white rounded-3xl border border-slate-200 p-5 shadow-sm">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <button onclick="printReceiptPdf()"
+            class="py-3.5 px-4 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-sm shadow-sm transition-all active:scale-[0.98]">
+            🖨️ 영수증 PDF 저장 / 인쇄
+          </button>
+          <button onclick="copyResultToClipboard()"
+            class="py-3.5 px-4 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-sm shadow-sm transition-all active:scale-[0.98]">
+            📋 결과 내용 복사
+          </button>
+          <button onclick="downloadResultTxt()"
+            class="py-3.5 px-4 rounded-2xl bg-sky-500 hover:bg-sky-600 text-white font-extrabold text-sm shadow-sm transition-all active:scale-[0.98]">
+            💾 텍스트(.txt) 저장
+          </button>
+          <button onclick="goToStart()"
+            class="py-3.5 px-4 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-sm transition-all active:scale-[0.98]">
+            🔄 다른 미션 도전하기
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==================== 기록 전체 삭제 확인 모달 ==================== -->
+  <div id="clearHistoryModal" class="hidden no-print fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl text-center">
+      <div class="w-12 h-12 rounded-2xl bg-rose-50 text-rose-500 flex items-center justify-center text-2xl mx-auto mb-3">🗑️</div>
+      <h3 class="text-lg font-extrabold text-slate-800 mb-1.5">장보기 기록을 모두 지울까요?</h3>
+      <p class="text-xs sm:text-sm text-slate-500 leading-relaxed mb-6">
+        저장된 이전 영수증과 구매 이유 기록이 모두 삭제되며 되돌릴 수 없어요.
+      </p>
+      <div class="grid grid-cols-2 gap-2.5">
+        <button onclick="closeClearHistoryModal()" class="py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm">취소</button>
+        <button onclick="confirmClearHistory()" class="py-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-sm">모두 지우기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 토스트 알림 ==================== -->
+  <div id="toastNotification" class="hidden no-print fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-full bg-slate-800 text-white text-xs sm:text-sm font-bold shadow-xl toast-pop">
+  </div>
+
+  <script>
+    /* =====================================================================
+     * 1. 미션 및 상품 데이터 정의
+     * ===================================================================== */
+    const HISTORY_STORAGE_KEY = 'smart_shopping_mission_history_v1';
+
+    const MISSIONS = [
+      {
+        id: 'curry',
+        emoji: '🍛',
+        title: '카레 만들기',
+        budget: 15000,
+        badgeColor: 'bg-amber-100 text-amber-800',
+        cardGradient: 'from-amber-50 to-orange-50 border-amber-200 hover:border-amber-400',
+        description: '가족들과 함께 먹을 맛있는 카레를 만들 재료를 15,000원 안에서 알뜰하게 골라보세요!',
+        items: [
+          { id: 'c1', emoji: '🍛', name: '카레가루', price: 3000, category: '필수' },
+          { id: 'c2', emoji: '🥩', name: '돼지고기', price: 5500, category: '재료' },
+          { id: 'c3', emoji: '🥔', name: '감자', price: 2500, category: '재료' },
+          { id: 'c4', emoji: '🥕', name: '당근', price: 1500, category: '재료' },
+          { id: 'c5', emoji: '🧅', name: '양파', price: 2000, category: '재료' },
+          { id: 'c6', emoji: '🥦', name: '브로콜리', price: 2500, category: '재료' },
+          { id: 'c7', emoji: '🍚', name: '즉석밥', price: 1800, category: '필수' },
+          { id: 'c8', emoji: '🥬', name: '김치', price: 3500, category: '반찬' },
+          { id: 'c9', emoji: '🥤', name: '탄산음료', price: 1500, category: '간식' },
+          { id: 'c10', emoji: '🍟', name: '감자칩', price: 2000, category: '간식' },
+          { id: 'c11', emoji: '🍫', name: '초콜릿', price: 1500, category: '간식' },
+          { id: 'c12', emoji: '🫗', name: '요리용 기름', price: 3000, category: '용품' }
+        ]
+      },
+      {
+        id: 'camping',
+        emoji: '⛺',
+        title: '여름 캠핑 준비하기',
+        budget: 30000,
+        badgeColor: 'bg-emerald-100 text-emerald-800',
+        cardGradient: 'from-emerald-50 to-teal-50 border-emerald-200 hover:border-emerald-400',
+        description: '즐겁고 안전한 여름 캠핑을 위해 먹거리와 꼭 필요한 캠핑 용품을 30,000원으로 준비해요!',
+        items: [
+          { id: 'm1', emoji: '🥓', name: '삼겹살', price: 12000, category: '재료' },
+          { id: 'm2', emoji: '🥬', name: '쌈채소', price: 3500, category: '재료' },
+          { id: 'm3', emoji: '🍜', name: '컵라면 2개', price: 2400, category: '간식' },
+          { id: 'm4', emoji: '💧', name: '생수 6병', price: 3000, category: '필수' },
+          { id: 'm5', emoji: '🍡', name: '마시멜로', price: 2500, category: '간식' },
+          { id: 'm6', emoji: '🦟', name: '모기 기피제', price: 5500, category: '필수' },
+          { id: 'm7', emoji: '🧊', name: '아이스팩', price: 2000, category: '용품' },
+          { id: 'm8', emoji: '🍽️', name: '종이컵·접시', price: 3000, category: '용품' },
+          { id: 'm9', emoji: '🔋', name: '손전등 건전지', price: 3500, category: '필수' },
+          { id: 'm10', emoji: '🔥', name: '숯·번개탄', price: 6000, category: '용품' },
+          { id: 'm11', emoji: '🃏', name: '보드게임 카드', price: 5000, category: '놀이' },
+          { id: 'm12', emoji: '🍦', name: '아이스크림', price: 4000, category: '간식' }
+        ]
+      },
+      {
+        id: 'birthday',
+        emoji: '🎂',
+        title: '친구 생일파티 준비하기',
+        budget: 25000,
+        badgeColor: 'bg-rose-100 text-rose-800',
+        cardGradient: 'from-rose-50 to-pink-50 border-rose-200 hover:border-rose-400',
+        description: '소중한 친구의 생일을 축하해 줄 파티 음식, 장식, 선물을 25,000원 안에서 알차게 꾸며보세요!',
+        items: [
+          { id: 'b1', emoji: '🎂', name: '미니 케이크', price: 12000, category: '필수' },
+          { id: 'b2', emoji: '🥳', name: '생일 초·고깔모자', price: 2500, category: '용품' },
+          { id: 'b3', emoji: '🎈', name: '풍선 세트', price: 3000, category: '용품' },
+          { id: 'b4', emoji: '🍪', name: '과자 모음', price: 4000, category: '간식' },
+          { id: 'b5', emoji: '🧃', name: '과일 주스', price: 3500, category: '간식' },
+          { id: 'b6', emoji: '🍕', name: '피자 빵', price: 4500, category: '간식' },
+          { id: 'b7', emoji: '🎀', name: '선물 포장지', price: 2000, category: '용품' },
+          { id: 'b8', emoji: '💌', name: '축하 카드', price: 1500, category: '필수' },
+          { id: 'b9', emoji: '🧸', name: '미니 인형 선물', price: 7000, category: '선물' },
+          { id: 'b10', emoji: '🥤', name: '종이접시·빨대', price: 2500, category: '용품' },
+          { id: 'b11', emoji: '🍬', name: '젤리', price: 2000, category: '간식' },
+          { id: 'b12', emoji: '🎉', name: '폭죽', price: 3000, category: '용품' }
+        ]
+      }
+    ];
+
+    const CATEGORY_STYLES = {
+      필수: 'bg-emerald-100 text-emerald-700',
+      재료: 'bg-amber-100 text-amber-800',
+      간식: 'bg-rose-100 text-rose-700',
+      용품: 'bg-sky-100 text-sky-700',
+      반찬: 'bg-lime-100 text-lime-800',
+      놀이: 'bg-violet-100 text-violet-700',
+      선물: 'bg-pink-100 text-pink-700'
+    };
+
+    /* =====================================================================
+     * 2. 앱 전역 상태
+     * ===================================================================== */
+    let currentStep = 1; // 1: 시작, 2: 쇼핑, 3: 결과
+    let activeMission = null;
+    let selectedCategory = '전체';
+    let cart = {}; // itemId -> quantity
+    let currentRecord = null; // 현재 보고 있는 결과 레코드
+    let toastTimer = null;
+
+    /* =====================================================================
+     * 3. 유틸리티 함수
+     * ===================================================================== */
+    function formatWon(num) {
+      return Number(num || 0).toLocaleString('ko-KR') + '원';
+    }
+
+    function formatDateTime() {
+      const d = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function showToast(msg) {
+      const el = document.getElementById('toastNotification');
+      el.textContent = msg;
+      el.classList.remove('hidden');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        el.classList.add('hidden');
+      }, 2600);
+    }
+
+    /* =====================================================================
+     * 4. localStorage 기록 관리
+     * ===================================================================== */
+    function loadHistory() {
+      try {
+        const raw = localStorage.getItem(HISTORY_STORAGE_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function saveOrUpdateHistoryRecord(record) {
+      const list = loadHistory();
+      const idx = list.findIndex(r => r.id === record.id);
+      if (idx >= 0) {
+        list[idx] = record;
+      } else {
+        list.unshift(record);
+      }
+      try {
+        localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(list));
+      } catch (e) {
+        console.error('기록 저장 실패:', e);
+      }
+    }
+
+    function deleteHistoryRecord(recordId, event) {
+      if (event) event.stopPropagation();
+      const list = loadHistory().filter(r => r.id !== recordId);
+      try {
+        localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(list));
+      } catch (e) {}
+      renderHistoryList();
+      showToast('선택한 장보기 기록을 삭제했어요.');
+    }
+
+    /* =====================================================================
+     * 5. 스텝 전환 및 화면 제어
+     * ===================================================================== */
+    function updateStepIndicator(step) {
+      currentStep = step;
+      [1, 2, 3].forEach(num => {
+        const badge = document.getElementById('stepBadge' + num);
+        const circle = badge.querySelector('span:first-child');
+        if (num === step) {
+          badge.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-extrabold bg-amber-400 text-white shadow-sm transition-all';
+          circle.className = 'w-5 h-5 rounded-full bg-white text-amber-600 flex items-center justify-center text-[11px] font-black';
+        } else if (num < step) {
+          badge.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-extrabold text-emerald-700 bg-emerald-100/80 transition-all';
+          circle.className = 'w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[11px] font-black';
+        } else {
+          badge.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold text-slate-400 transition-all';
+          circle.className = 'w-5 h-5 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-[11px] font-bold';
+        }
+      });
+
+      document.getElementById('startView').classList.toggle('hidden', step !== 1);
+      document.getElementById('shopView').classList.toggle('hidden', step !== 2);
+      document.getElementById('resultView').classList.toggle('hidden', step !== 3);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function goToStart() {
+      updateStepIndicator(1);
+      renderHistoryList();
+    }
+
+    /* =====================================================================
+     * 6. STEP 1: 시작 화면 렌더링
+     * ===================================================================== */
+    function renderMissionCards() {
+      const grid = document.getElementById('missionCardsGrid');
+      grid.innerHTML = MISSIONS.map(m => `
+        <button onclick="selectMission('${m.id}')"
+          class="text-left bg-gradient-to-br ${m.cardGradient} border-2 rounded-3xl p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all flex flex-col justify-between group">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <span class="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center text-3xl group-hover:scale-110 transition-transform">
+                ${m.emoji}
+              </span>
+              <span class="px-3.5 py-1.5 rounded-full text-xs font-extrabold ${m.badgeColor} tabular-nums">
+                예산 ${formatWon(m.budget)}
+              </span>
+            </div>
+            <h4 class="text-xl font-black text-slate-800 mb-2">${m.title}</h4>
+            <p class="text-xs sm:text-sm text-slate-600 leading-relaxed mb-5">${m.description}</p>
+          </div>
+          <div class="flex items-center justify-between pt-3 border-t border-black/5">
+            <span class="text-xs font-bold text-slate-500">상품 ${m.items.length}종 진열</span>
+            <span class="text-sm font-extrabold text-amber-700 group-hover:translate-x-1 transition-transform">도전하기 →</span>
+          </div>
+        </button>
+      `).join('');
+    }
+
+    function renderHistoryList() {
+      const list = loadHistory();
+      const container = document.getElementById('historyListContainer');
+      const clearBtn = document.getElementById('btnClearHistory');
+
+      if (list.length === 0) {
+        clearBtn.classList.add('hidden');
+        container.innerHTML = `
+          <div class="col-span-full text-center py-8 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-slate-400 text-xs sm:text-sm font-semibold">
+            아직 완료한 장보기 기록이 없어요. 위에서 미션을 선택해 첫 장보기를 시작해 보세요!
+          </div>
+        `;
+        return;
+      }
+
+      clearBtn.classList.remove('hidden');
+      container.innerHTML = list.map(rec => `
+        <div onclick="openSavedRecord('${rec.id}')"
+          class="cursor-pointer bg-amber-50/40 hover:bg-amber-50 border border-slate-200 hover:border-amber-300 rounded-2xl p-4 transition-all flex flex-col justify-between gap-2.5">
+          <div class="flex items-start justify-between gap-2">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="text-2xl shrink-0">${rec.missionEmoji}</span>
+              <div class="min-w-0">
+                <h4 class="font-extrabold text-sm text-slate-800 truncate">${escapeHtml(rec.missionTitle)}</h4>
+                <p class="text-[11px] text-slate-500 truncate">${escapeHtml(rec.studentName)} · ${escapeHtml(rec.dateTime)}</p>
+              </div>
+            </div>
+            <button onclick="deleteHistoryRecord('${rec.id}', event)" title="기록 삭제"
+              class="w-6 h-6 rounded-full hover:bg-rose-100 text-slate-400 hover:text-rose-600 text-xs font-bold flex items-center justify-center shrink-0">
+              ×
+            </button>
+          </div>
+          <div class="flex items-center justify-between text-xs pt-2 border-t border-slate-200/70">
+            <span class="font-bold text-slate-600 tabular-nums">사용 ${formatWon(rec.spent)}</span>
+            <span class="font-extrabold text-emerald-600 tabular-nums">잔액 ${formatWon(rec.remain)}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function openSavedRecord(recordId) {
+      const list = loadHistory();
+      const found = list.find(r => r.id === recordId);
+      if (!found) return;
+
+      currentRecord = found;
+      // 저장된 기록을 열 때는 장바구니 수정 버튼 숨김 (미션 재진입 혼선 방지)
+      document.getElementById('btnBackToShop').classList.add('hidden');
+      renderResultScreen(currentRecord);
+      updateStepIndicator(3);
+    }
+
+    /* =====================================================================
+     * 7. STEP 2: 쇼핑 화면 로직
+     * ===================================================================== */
+    function selectMission(missionId) {
+      activeMission = MISSIONS.find(m => m.id === missionId);
+      if (!activeMission) return;
+
+      cart = {};
+      selectedCategory = '전체';
+      currentRecord = null;
+
+      document.getElementById('shopMissionBadge').textContent = `${activeMission.emoji} ${activeMission.title}`;
+      renderCategoryFilters();
+      renderProductsGrid();
+      updateCartAndBudgetUI();
+      updateStepIndicator(2);
+    }
+
+    function renderCategoryFilters() {
+      const categories = ['전체', ...new Set(activeMission.items.map(i => i.category))];
+      const bar = document.getElementById('categoryFilterBar');
+      bar.innerHTML = categories.map(cat => {
+        const active = cat === selectedCategory;
+        return `
+          <button onclick="setCategoryFilter('${cat}')"
+            class="px-3.5 py-1.5 rounded-full text-xs font-extrabold whitespace-nowrap transition-all ${
+              active
+                ? 'bg-slate-800 text-white shadow-sm'
+                : 'bg-white border border-slate-200 text-slate-600 hover:bg-amber-50'
+            }">
+            ${cat}
+          </button>
+        `;
+      }).join('');
+    }
+
+    function setCategoryFilter(cat) {
+      selectedCategory = cat;
+      renderCategoryFilters();
+      renderProductsGrid();
+    }
+
+    function renderProductsGrid() {
+      const grid = document.getElementById('productsGrid');
+      const filtered = selectedCategory === '전체'
+        ? activeMission.items
+        : activeMission.items.filter(item => item.category === selectedCategory);
+
+      grid.innerHTML = filtered.map(item => {
+        const qty = cart[item.id] || 0;
+        const isPicked = qty > 0;
+        const catStyle = CATEGORY_STYLES[item.category] || 'bg-slate-100 text-slate-600';
+
+        return `
+          <div class="bg-white rounded-3xl p-4 border-2 transition-all flex flex-col justify-between ${
+            isPicked
+              ? 'border-amber-400 ring-2 ring-amber-100 shadow-md'
+              : 'border-slate-200/80 hover:border-slate-300 shadow-sm'
+          }">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold ${catStyle}">${item.category}</span>
+                ${isPicked ? `<span class="px-2 py-0.5 rounded-full bg-amber-500 text-white text-[11px] font-extrabold tabular-nums">${qty}개 담김</span>` : ''}
+              </div>
+              <div class="w-16 h-16 mx-auto my-2 rounded-2xl bg-amber-50/70 flex items-center justify-center text-4xl">
+                ${item.emoji}
+              </div>
+              <h4 class="text-center font-extrabold text-sm sm:text-base text-slate-800 leading-snug">${item.name}</h4>
+              <p class="text-center text-sm font-black text-amber-600 mt-0.5 mb-4 tabular-nums">${formatWon(item.price)}</p>
+            </div>
+
+            <!-- 수량 조절 버튼 -->
+            <div class="flex items-center justify-between bg-slate-50 rounded-2xl p-1 border border-slate-200/80">
+              <button onclick="changeQuantity('${item.id}', -1)" ${qty === 0 ? 'disabled' : ''}
+                class="w-9 h-9 rounded-xl bg-white hover:bg-rose-50 hover:text-rose-600 disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-slate-400 text-slate-700 font-black text-lg shadow-sm flex items-center justify-center transition-colors">
+                −
+              </button>
+              <span class="font-extrabold text-sm text-slate-800 tabular-nums">${qty}</span>
+              <button onclick="changeQuantity('${item.id}', 1)"
+                class="w-9 h-9 rounded-xl bg-amber-400 hover:bg-amber-500 active:scale-95 text-white font-black text-lg shadow-sm flex items-center justify-center transition-all">
+                +
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function changeQuantity(itemId, delta) {
+      const next = Math.max(0, (cart[itemId] || 0) + delta);
+      if (next === 0) {
+        delete cart[itemId];
+      } else {
+        cart[itemId] = next;
+      }
+      renderProductsGrid();
+      updateCartAndBudgetUI();
+    }
+
+    function removeFromCart(itemId) {
+      delete cart[itemId];
+      renderProductsGrid();
+      updateCartAndBudgetUI();
+    }
+
+    function emptyCart() {
+      if (Object.keys(cart).length === 0) return;
+      cart = {};
+      renderProductsGrid();
+      updateCartAndBudgetUI();
+      showToast('장바구니를 모두 비웠어요.');
+    }
+
+    function calculateCartStats() {
+      const entries = [];
+      let totalQty = 0;
+      let totalSpent = 0;
+
+      activeMission.items.forEach(item => {
+        const qty = cart[item.id] || 0;
+        if (qty > 0) {
+          const subtotal = item.price * qty;
+          entries.push({ ...item, qty, subtotal });
+          totalQty += qty;
+          totalSpent += subtotal;
+        }
+      });
+
+      const budget = activeMission.budget;
+      const remain = budget - totalSpent;
+      return { entries, totalQty, totalSpent, budget, remain };
+    }
+
+    function updateCartAndBudgetUI() {
+      const { entries, totalQty, totalSpent, budget, remain } = calculateCartStats();
+      const isOverBudget = remain < 0;
+      const isEmpty = totalQty === 0;
+      const pct = Math.min(100, Math.round((totalSpent / budget) * 100));
+
+      // 상단 예산 바 수치 업데이트
+      document.getElementById('shopItemCountBadge').textContent = `담은 상품 ${totalQty}개`;
+      document.getElementById('statBudget').textContent = formatWon(budget);
+      document.getElementById('statSpent').textContent = formatWon(totalSpent);
+
+      const remainEl = document.getElementById('statRemain');
+      const barEl = document.getElementById('budgetProgressBar');
+      const statusBox = document.getElementById('budgetStatusBar');
+      const overAlert = document.getElementById('overBudgetAlert');
+      const overAlertText = document.getElementById('overBudgetAlertText');
+
+      if (isOverBudget) {
+        remainEl.textContent = `-${formatWon(Math.abs(remain))}`;
+        remainEl.className = 'text-sm sm:text-base font-extrabold text-rose-600 tabular-nums';
+        barEl.style.width = '100%';
+        barEl.className = 'h-full bg-gradient-to-r from-rose-500 to-red-600 rounded-full transition-all duration-300';
+        statusBox.className = 'sticky top-[106px] sm:top-[68px] z-30 bg-white/95 backdrop-blur-md rounded-3xl border-2 border-rose-400 p-4 sm:p-5 shadow-md mb-6 transition-colors';
+        overAlertText.textContent = `예산을 ${formatWon(Math.abs(remain))} 초과했어요! 수량을 줄여 주세요.`;
+        overAlert.classList.remove('hidden');
+      } else {
+        remainEl.textContent = formatWon(remain);
+        remainEl.className = 'text-sm sm:text-base font-extrabold text-emerald-600 tabular-nums';
+        barEl.style.width = `${pct}%`;
+        barEl.className = pct >= 85
+          ? 'h-full bg-gradient-to-r from-amber-400 to-orange-500 rounded-full transition-all duration-300'
+          : 'h-full bg-gradient-to-r from-emerald-400 to-teal-500 rounded-full transition-all duration-300';
+        statusBox.className = 'sticky top-[106px] sm:top-[68px] z-30 bg-white/95 backdrop-blur-md rounded-3xl border-2 border-emerald-200 p-4 sm:p-5 shadow-md mb-6 transition-colors';
+        overAlert.classList.add('hidden');
+      }
+
+      // 우측 장바구니 목록 렌더링
+      const cartList = document.getElementById('cartItemsList');
+      if (isEmpty) {
+        cartList.innerHTML = `
+          <div class="text-center py-10 text-slate-400">
+            <div class="text-3xl mb-2">🛒</div>
+            <p class="text-xs font-semibold">아직 담은 물건이 없어요.<br>왼쪽에서 필요한 상품을 담아보세요!</p>
+          </div>
+        `;
+      } else {
+        cartList.innerHTML = entries.map(e => `
+          <div class="flex items-center justify-between gap-2 bg-slate-50 rounded-2xl px-3 py-2.5 border border-slate-100">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="text-xl shrink-0">${e.emoji}</span>
+              <div class="min-w-0">
+                <p class="text-xs font-extrabold text-slate-800 truncate">${e.name}</p>
+                <p class="text-[11px] font-semibold text-slate-500 tabular-nums">${formatWon(e.price)} × ${e.qty}개</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <span class="text-xs font-extrabold text-slate-800 tabular-nums">${formatWon(e.subtotal)}</span>
+              <button onclick="removeFromCart('${e.id}')" title="삭제"
+                class="w-6 h-6 rounded-full bg-white border border-slate-200 hover:bg-rose-50 hover:text-rose-600 text-slate-400 text-xs font-bold flex items-center justify-center">
+                ×
+              </button>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      document.getElementById('cartTotalQty').textContent = `${totalQty}개`;
+      document.getElementById('cartTotalPrice').textContent = formatWon(totalSpent);
+
+      // 예산 초과 방지 락 & 빈 장바구니 락
+      const checkoutBtn = document.getElementById('btnGoToCheckout');
+      const hintEl = document.getElementById('checkoutHintText');
+
+      if (isEmpty) {
+        checkoutBtn.disabled = true;
+        hintEl.textContent = '물건을 1개 이상 담아야 계산대로 갈 수 있어요.';
+        hintEl.className = 'text-[11px] text-center font-semibold text-slate-400 mt-2';
+      } else if (isOverBudget) {
+        checkoutBtn.disabled = true;
+        hintEl.textContent = `🚨 예산을 ${formatWon(Math.abs(remain))} 초과해 제출할 수 없어요!`;
+        hintEl.className = 'text-[11px] text-center font-extrabold text-rose-600 mt-2';
+      } else {
+        checkoutBtn.disabled = false;
+        hintEl.textContent = `✅ 예산 안에서 알뜰하게 담았어요! (남은 잔액 ${formatWon(remain)})`;
+        hintEl.className = 'text-[11px] text-center font-bold text-emerald-600 mt-2';
+      }
+    }
+
+    /* =====================================================================
+     * 8. STEP 3: 결과 화면 (영수증 & 소비 이유 작성)
+     * ===================================================================== */
+    function goToResult() {
+      const { entries, totalQty, totalSpent, budget, remain } = calculateCartStats();
+      if (totalQty === 0 || remain < 0) return;
+
+      const studentName = document.getElementById('studentNameInput').value.trim() || '우리 반 학생';
+      const saveRate = Math.round((remain / budget) * 100);
+
+      currentRecord = {
+        id: currentRecord ? currentRecord.id : 'rec-' + Date.now(),
+        missionId: activeMission.id,
+        missionEmoji: activeMission.emoji,
+        missionTitle: activeMission.title,
+        studentName: studentName,
+        dateTime: formatDateTime(),
+        budget: budget,
+        spent: totalSpent,
+        remain: remain,
+        saveRate: saveRate,
+        items: entries.map(e => ({
+          emoji: e.emoji,
+          name: e.name,
+          qty: e.qty,
+          price: e.price,
+          subtotal: e.subtotal
+        })),
+        reason: currentRecord ? (currentRecord.reason || '') : '',
+        checks: currentRecord ? (currentRecord.checks || { plan: false, need: false, impulse: false }) : { plan: false, need: false, impulse: false }
+      };
+
+      saveOrUpdateHistoryRecord(currentRecord);
+      document.getElementById('btnBackToShop').classList.remove('hidden');
+      renderResultScreen(currentRecord);
+      updateStepIndicator(3);
+    }
+
+    function backToShopFromResult() {
+      if (!activeMission) {
+        goToStart();
+        return;
+      }
+      updateStepIndicator(2);
+    }
+
+    function renderResultScreen(rec) {
+      document.getElementById('rcptMissionEmoji').textContent = rec.missionEmoji;
+      document.getElementById('rcptMissionTitle').textContent = `${rec.missionTitle} 미션`;
+      document.getElementById('rcptStudentName').textContent = `👤 ${rec.studentName}`;
+      document.getElementById('rcptDateTime').textContent = rec.dateTime;
+
+      const body = document.getElementById('rcptItemsBody');
+      body.innerHTML = rec.items.map(item => `
+        <div class="grid grid-cols-12 items-center py-2.5">
+          <span class="col-span-5 font-bold text-slate-800 truncate pr-1">${item.emoji} ${escapeHtml(item.name)}</span>
+          <span class="col-span-2 text-center font-semibold text-slate-600 tabular-nums">${item.qty}</span>
+          <span class="col-span-2 text-right text-slate-500 tabular-nums">${item.price.toLocaleString()}</span>
+          <span class="col-span-3 text-right font-extrabold text-slate-800 tabular-nums">${item.subtotal.toLocaleString()}원</span>
+        </div>
+      `).join('');
+
+      document.getElementById('rcptBudget').textContent = formatWon(rec.budget);
+      document.getElementById('rcptSpent').textContent = formatWon(rec.spent);
+      document.getElementById('rcptRemain').textContent = formatWon(rec.remain);
+      document.getElementById('rcptSaveRate').textContent = `${rec.saveRate}% 절약`;
+
+      // 구매 이유 및 체크박스 복원
+      const textarea = document.getElementById('reasonTextarea');
+      textarea.value = rec.reason || '';
+      document.getElementById('chkPlan').checked = !!(rec.checks && rec.checks.plan);
+      document.getElementById('chkNeed').checked = !!(rec.checks && rec.checks.need);
+      document.getElementById('chkImpulse').checked = !!(rec.checks && rec.checks.impulse);
+
+      syncReasonMirrorAndCount();
+    }
+
+    function handleReasonUpdate() {
+      if (!currentRecord) return;
+      currentRecord.reason = document.getElementById('reasonTextarea').value;
+      currentRecord.checks = {
+        plan: document.getElementById('chkPlan').checked,
+        need: document.getElementById('chkNeed').checked,
+        impulse: document.getElementById('chkImpulse').checked
+      };
+      syncReasonMirrorAndCount();
+      saveOrUpdateHistoryRecord(currentRecord);
+    }
+
+    function syncReasonMirrorAndCount() {
+      const val = document.getElementById('reasonTextarea').value;
+      document.getElementById('reasonCharCount').textContent = `${val.length}자`;
+      document.getElementById('reasonPrintMirror').textContent = val.trim() ? val : '(작성된 구매 이유가 없습니다.)';
+    }
+
+    /* =====================================================================
+     * 9. 결과 내보내기 (PDF 인쇄 / 클립보드 복사 / .txt 파일 저장)
+     * ===================================================================== */
+    function buildPlainTextReport() {
+      if (!currentRecord) return '';
+      const rec = currentRecord;
+      const lines = [
+        '========================================',
+        `🛒 [우리 반 스마트 장보기 미션 영수증]`,
+        '========================================',
+        `• 미션명: ${rec.missionEmoji} ${rec.missionTitle}`,
+        `• 학생 이름: ${rec.studentName}`,
+        `• 작성 일시: ${rec.dateTime}`,
+        '----------------------------------------',
+        '[구매한 품목 목록]'
+      ];
+
+      rec.items.forEach(item => {
+        lines.push(`- ${item.name} (${item.price.toLocaleString()}원 × ${item.qty}개) = ${item.subtotal.toLocaleString()}원`);
+      });
+
+      lines.push('----------------------------------------');
+      lines.push(`• 주어진 예산: ${formatWon(rec.budget)}`);
+      lines.push(`• 총 사용 금액: ${formatWon(rec.spent)}`);
+      lines.push(`• 남은 잔액: ${formatWon(rec.remain)} (절약률 ${rec.saveRate}%)`);
+      lines.push('========================================');
+      lines.push('');
+      lines.push('[✍️ 내가 이 물건들을 선택한 이유]');
+      lines.push(rec.reason && rec.reason.trim() ? rec.reason.trim() : '(작성된 내용이 없습니다.)');
+      lines.push('');
+      lines.push('[✅ 합리적 소비 자기점검]');
+      lines.push(`${rec.checks.plan ? '☑' : '☐'} 예산 안에서 계획적으로 골랐어요`);
+      lines.push(`${rec.checks.need ? '☑' : '☐'} 미션에 꼭 필요한 물건을 먼저 담았어요`);
+      lines.push(`${rec.checks.impulse ? '☑' : '☐'} 충동구매를 줄이려고 고민했어요`);
+      lines.push('========================================');
+
+      return lines.join('\n');
+    }
+
+    function printReceiptPdf() {
+      syncReasonMirrorAndCount();
+      window.print();
+    }
+
+    function copyResultToClipboard() {
+      const text = buildPlainTextReport();
+      if (!text) return;
+
+      // iframe 환경 호환을 위해 임시 textarea + document.execCommand('copy') 사용
+      const tempArea = document.createElement('textarea');
+      tempArea.value = text;
+      tempArea.style.position = 'fixed';
+      tempArea.style.left = '-9999px';
+      document.body.appendChild(tempArea);
+      tempArea.select();
+
+      try {
+        document.execCommand('copy');
+        showToast('📋 영수증과 구매 이유를 클립보드에 복사했어요!');
+      } catch (e) {
+        showToast('복사에 실패했어요. 텍스트 저장 버튼을 이용해 보세요.');
+      } finally {
+        document.body.removeChild(tempArea);
+      }
+    }
+
+    function downloadResultTxt() {
+      const text = buildPlainTextReport();
+      if (!text) return;
+
+      const safeName = (currentRecord.studentName || '학생').replace(/[\\/:*?"<>|]/g, '');
+      const fileName = `스마트장보기_${currentRecord.missionTitle}_${safeName}.txt`;
+
+      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      showToast('💾 텍스트(.txt) 파일로 저장했어요!');
+    }
+
+    /* =====================================================================
+     * 10. 기록 전체 삭제 모달 제어
+     * ===================================================================== */
+    function openClearHistoryModal() {
+      document.getElementById('clearHistoryModal').classList.remove('hidden');
+    }
+
+    function closeClearHistoryModal() {
+      document.getElementById('clearHistoryModal').classList.add('hidden');
+    }
+
+    function confirmClearHistory() {
+      localStorage.removeItem(HISTORY_STORAGE_KEY);
+      closeClearHistoryModal();
+      renderHistoryList();
+      showToast('🗑️ 모든 장보기 기록을 삭제했어요.');
+    }
+
+    /* =====================================================================
+     * 11. 초기 실행
+     * ===================================================================== */
+    window.addEventListener('DOMContentLoaded', () => {
+      renderMissionCards();
+      renderHistoryList();
+      updateStepIndicator(1);
+    });
+  </script>
+</body>
+</html>
