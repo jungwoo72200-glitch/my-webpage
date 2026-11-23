@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>나의 활동 성향 알아보기 | 초등 활동 성향 분석 앱</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Noto Sans KR Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background-color: #f4f7fb;
+      color: #1e293b;
+    }
+
+    /* 커스텀 스크롤바 */
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 999px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 999px;
+    }
+
+    /* 4점 척도 라디오 버튼 커스텀 스타일 */
+    .scale-radio:checked + label {
+      border-color: #4f46e5;
+      background-color: #eef2ff;
+      color: #4338ca;
+      font-weight: 700;
+      box-shadow: 0 2px 8px rgba(79, 70, 229, 0.15);
+    }
+
+    /* PDF 인쇄 전용 스타일 (@media print) */
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 14mm;
+      }
+      body {
+        background-color: #ffffff !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      #dashboardView {
+        display: block !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
+      }
+      #reportContainer {
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        width: 100% !important;
+      }
+      .print-grid-2 {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 16px !important;
+      }
+      .print-break-avoid {
+        break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- 상단 네비게이션 바 -->
+  <header class="no-print bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-lg font-extrabold shadow-sm">
+          ★
+        </div>
+        <div>
+          <h1 class="text-base sm:text-lg font-extrabold text-slate-800 leading-tight">나의 활동 성향 알아보기</h1>
+          <p class="text-[11px] sm:text-xs text-slate-500 hidden sm:block">초등학생 맞춤형 활동 성향 진단 &amp; 교사용 분석 리포트</p>
+        </div>
+      </div>
+
+      <!-- 탭 전환 버튼 -->
+      <nav class="flex items-center bg-slate-100 p-1 rounded-xl">
+        <button id="tabSurveyBtn" onclick="switchTab('survey')" class="px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-all">
+          📝 학생용 설문
+        </button>
+        <button id="tabDashboardBtn" onclick="switchTab('dashboard')" class="px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-all">
+          📊 교사용 분석표
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- 메인 콘텐츠 영역 -->
+  <main class="flex-1 w-full">
+
+    <!-- ==================== 1. 학생용 설문 (SURVEY) ==================== -->
+    <section id="surveyView" class="no-print max-w-3xl mx-auto px-4 py-6 sm:py-10">
+
+      <!-- 1-1. 학생 로그인 화면 -->
+      <div id="studentLoginCard" class="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 sm:p-10">
+        <div class="text-center mb-8">
+          <span class="inline-block px-3.5 py-1 rounded-full bg-indigo-50 text-indigo-600 text-xs font-bold mb-3">
+            초등 5학년 눈높이 자기보고형 검사
+          </span>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-2">반가워요! 나의 성향을 찾아볼까요?</h2>
+          <p class="text-sm sm:text-base text-slate-500 leading-relaxed">
+            내가 어떤 활동을 좋아하고 잘하는지 20개의 짧은 질문으로 알아보는 시간이에요.<br class="hidden sm:inline">
+            이름과 선생님이 알려준 입장 암호를 입력하고 시작해 보세요.
+          </p>
+        </div>
+
+        <div class="max-w-md mx-auto space-y-4">
+          <div>
+            <label for="inputStudentName" class="block text-sm font-bold text-slate-700 mb-1.5">이름</label>
+            <input type="text" id="inputStudentName" placeholder="예: 김민수" autocomplete="off"
+              class="w-full px-4 py-3.5 rounded-2xl border-2 border-slate-200 focus:border-indigo-500 focus:outline-none text-base transition-colors">
+          </div>
+          <div>
+            <label for="inputStudentPw" class="block text-sm font-bold text-slate-700 mb-1.5">입장 암호</label>
+            <input type="password" id="inputStudentPw" placeholder="암호 4자리 입력 (힌트: 2026)" autocomplete="off"
+              class="w-full px-4 py-3.5 rounded-2xl border-2 border-slate-200 focus:border-indigo-500 focus:outline-none text-base transition-colors"
+              onkeydown="if(event.key==='Enter') handleStudentLogin()">
+          </div>
+
+          <!-- 에러 안내 메시지 -->
+          <div id="loginErrorBox" class="hidden rounded-xl bg-rose-50 border border-rose-200 px-4 py-3 text-sm font-semibold text-rose-600">
+          </div>
+
+          <button onclick="handleStudentLogin()"
+            class="w-full py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-bold text-base shadow-md shadow-indigo-200 transition-all">
+            설문 시작하기 →
+          </button>
+        </div>
+      </div>
+
+      <!-- 1-2. 20문항 설문 진행 화면 -->
+      <div id="studentSurveyArea" class="hidden">
+        <!-- 상단 고정 진행률 바 -->
+        <div class="sticky top-[72px] z-30 bg-white/95 backdrop-blur-md border border-slate-200 rounded-2xl p-4 mb-6 shadow-sm">
+          <div class="flex items-center justify-between text-sm font-bold mb-2">
+            <span id="surveyStudentBadge" class="text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full text-xs sm:text-sm"></span>
+            <span id="surveyProgressText" class="text-slate-700">0 / 20 문항 완료</span>
+          </div>
+          <div class="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
+            <div id="surveyProgressBar" class="h-full bg-gradient-to-r from-indigo-500 to-sky-400 rounded-full transition-all duration-300" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- 문항 리스트 렌더링 컨테이너 -->
+        <div id="questionsWrapper" class="space-y-6"></div>
+
+        <!-- 하단 제출 영역 -->
+        <div class="mt-8 bg-white rounded-3xl border border-slate-200 p-6 shadow-sm text-center">
+          <p id="submitStatusHint" class="text-sm font-semibold text-slate-500 mb-4">
+            아직 체크하지 않은 문항이 <span class="text-indigo-600 font-extrabold">20개</span> 남았어요. 모든 문항에 체크해야 제출할 수 있어요!
+          </p>
+          <button id="btnSubmitSurvey" disabled onclick="handleSurveySubmit()"
+            class="w-full sm:w-auto sm:min-w-[260px] px-8 py-4 rounded-2xl font-bold text-base transition-all disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-200 disabled:shadow-none">
+            제출 결과 보기
+          </button>
+        </div>
+      </div>
+
+      <!-- 1-3. 설문 제출 완료 화면 -->
+      <div id="studentCompleteCard" class="hidden bg-white rounded-3xl shadow-sm border border-slate-200 p-6 sm:p-10 text-center">
+        <div class="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-3xl mx-auto mb-4">
+          🎉
+        </div>
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-2">설문 제출 완료!</h2>
+        <p id="completeSubtitle" class="text-sm sm:text-base text-slate-500 mb-6"></p>
+
+        <!-- 대표 성향 배지 -->
+        <div class="inline-flex flex-col items-center bg-indigo-50 border border-indigo-100 rounded-2xl px-6 py-4 mb-6">
+          <span class="text-xs font-bold text-indigo-500 mb-1">나의 대표 활동 성향</span>
+          <span id="completeTypeBadge" class="text-xl sm:text-2xl font-extrabold text-indigo-700"></span>
+          <span id="completeTypeNick" class="text-xs sm:text-sm font-medium text-slate-600 mt-1"></span>
+        </div>
+
+        <!-- 4개 영역 점수 카드 -->
+        <div id="completeScoreCards" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6"></div>
+
+        <!-- 응원 메시지 -->
+        <div id="completeEncourageBox" class="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-sm text-amber-900 font-medium leading-relaxed mb-8">
+        </div>
+
+        <!-- 액션 버튼 -->
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+          <button onclick="resetSurveyFlow()"
+            class="w-full sm:w-auto px-6 py-3.5 rounded-2xl border-2 border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-sm transition-colors">
+            🔄 새로 설문하기
+          </button>
+          <button onclick="goToDashboardWithLatest()"
+            class="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-200 transition-colors">
+            📊 교사용 분석표에서 확인하기
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 2. 교사용 분석표 (DASHBOARD) ==================== -->
+    <section id="dashboardView" class="hidden max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+
+      <!-- 상단 타이틀 및 PDF 버튼 -->
+      <div class="no-print flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h2 class="text-xl sm:text-2xl font-extrabold text-slate-800">학급 활동 성향 분석 대시보드</h2>
+          <p class="text-xs sm:text-sm text-slate-500 mt-0.5">학생별 성향 리포트를 조회하고 모둠 구성 및 상담 자료(PDF)로 활용하세요.</p>
+        </div>
+        <div class="flex items-center gap-2.5">
+          <button onclick="renderDashboard()"
+            class="px-4 py-2.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs sm:text-sm font-bold transition-colors">
+            🔄 새로고침
+          </button>
+          <button id="btnPrintPdf" disabled onclick="window.print()"
+            class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-xs sm:text-sm font-bold shadow-sm transition-colors">
+            🖨️ 리포트 PDF 저장
+          </button>
+        </div>
+      </div>
+
+      <!-- 학급 전체 요약 카드 (5개) -->
+      <div class="no-print grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm col-span-2 sm:col-span-1">
+          <span class="text-xs font-bold text-slate-400">총 응답 학생</span>
+          <div id="summaryTotal" class="text-2xl font-extrabold text-slate-800 mt-1">0명</div>
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+          <span class="text-xs font-bold text-sky-600">🔍 탐구 평균</span>
+          <div id="summaryInquiry" class="text-xl font-extrabold text-slate-800 mt-1">0.0 <span class="text-xs font-medium text-slate-400">/ 20</span></div>
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+          <span class="text-xs font-bold text-violet-600">🎨 표현 평균</span>
+          <div id="summaryExpression" class="text-xl font-extrabold text-slate-800 mt-1">0.0 <span class="text-xs font-medium text-slate-400">/ 20</span></div>
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+          <span class="text-xs font-bold text-emerald-600">🤝 협력 평균</span>
+          <div id="summaryCooperation" class="text-xl font-extrabold text-slate-800 mt-1">0.0 <span class="text-xs font-medium text-slate-400">/ 20</span></div>
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+          <span class="text-xs font-bold text-amber-600">📅 계획 평균</span>
+          <div id="summaryPlanning" class="text-xl font-extrabold text-slate-800 mt-1">0.0 <span class="text-xs font-medium text-slate-400">/ 20</span></div>
+        </div>
+      </div>
+
+      <!-- 메인 2단 레이아웃: 좌측 학생 목록 / 우측 개별 리포트 -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+        <!-- 좌측: 학생 목록 사이드바 -->
+        <aside class="no-print lg:col-span-4 bg-white rounded-3xl border border-slate-200 p-5 shadow-sm">
+          <div class="mb-3">
+            <input type="text" id="studentSearchInput" oninput="renderStudentList()" placeholder="학생 이름 검색..."
+              class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 focus:outline-none text-sm">
+          </div>
+          <div id="studentListContainer" class="space-y-2.5 max-h-[560px] overflow-y-auto custom-scroll pr-1">
+            <!-- 학생 목록 렌더링 -->
+          </div>
+        </aside>
+
+        <!-- 우측: 개별 학생 상세 리포트 (PDF 인쇄 대상) -->
+        <div id="reportContainer" class="lg:col-span-8 bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm min-h-[520px]">
+          <div class="h-full flex flex-col items-center justify-center text-center py-20 text-slate-400">
+            <div class="text-4xl mb-3">📋</div>
+            <p class="font-semibold text-sm">왼쪽 목록에서 학생을 선택하면 상세 활동 성향 리포트가 표시됩니다.</p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    /* =====================================================================
+     * 1. 상수 및 문항/유형 데이터 정의
+     * ===================================================================== */
+    const STORAGE_KEY = 'elem_activity_tendency_v1';
+    const ENTRY_PASSWORD = '2026';
+
+    // 초등 5학년 눈높이 20문항 (탐구 1~5, 표현 6~10, 협력 11~15, 계획 16~20)
+    const QUESTIONS = [
+      // 탐구 성향 (1~5)
+      { id: 1, domain: '탐구', text: '나는 모르는 단어나 궁금한 점이 생기면 바로 찾아보는 것을 좋아한다.' },
+      { id: 2, domain: '탐구', text: '나는 수학 문제나 퍼즐처럼 머리를 써서 해결하는 활동을 좋아한다.' },
+      { id: 3, domain: '탐구', text: '나는 실험을 하거나 자연을 관찰하며 원리를 알아내는 것이 재미있다.' },
+      { id: 4, domain: '탐구', text: '나는 공부할 때 "왜 그럴까?" 하고 이유를 끝까지 생각해 보는 편이다.' },
+      { id: 5, domain: '탐구', text: '나는 책이나 과학 영상을 보며 새로운 지식을 배우는 것을 좋아한다.' },
+
+      // 표현 성향 (6~10)
+      { id: 6, domain: '표현', text: '나는 그림 그리기, 글쓰기, 만들기처럼 나만의 작품을 만드는 것을 좋아한다.' },
+      { id: 7, domain: '표현', text: '나는 수업 시간에 내 생각이나 느낌을 친구들 앞에서 발표하는 것을 좋아한다.' },
+      { id: 8, domain: '표현', text: '나는 남들과 똑같은 방법보다 새롭고 기발한 아이디어를 내는 것이 재미있다.' },
+      { id: 9, domain: '표현', text: '나는 배운 내용을 만화, 짧은 글, 노래 등으로 자유롭게 정리해 보는 편이다.' },
+      { id: 10, domain: '표현', text: '나는 하루 동안 느낀 감정이나 생각을 일기나 메모로 남기는 것을 좋아한다.' },
+
+      // 협력 성향 (11~15)
+      { id: 11, domain: '협력', text: '나는 혼자 할 때보다 친구들과 모둠을 이루어 함께 활동하는 것을 좋아한다.' },
+      { id: 12, domain: '협력', text: '나는 친구가 어려워하는 숙제나 문제를 친절하게 도와주는 것을 좋아한다.' },
+      { id: 13, domain: '협력', text: '나는 모둠 토의를 할 때 친구들의 의견을 끝까지 잘 들어주는 편이다.' },
+      { id: 14, domain: '협력', text: '나는 학급 행사나 체육 활동에서 모두가 힘을 합쳐 목표를 이루는 것이 재미있다.' },
+      { id: 15, domain: '협력', text: '나는 친구와 의견이 다를 때 서로 양보하며 좋은 해결 방법을 찾는 편이다.' },
+
+      // 계획 성향 (16~20)
+      { id: 16, domain: '계획', text: '나는 숙제나 준비물을 미리 챙겨 두고 제시간에 끝내는 것을 좋아한다.' },
+      { id: 17, domain: '계획', text: '나는 공부하기 전에 오늘 할 일을 순서대로 계획표에 적어 두는 편이다.' },
+      { id: 18, domain: '계획', text: '나는 내 책상이나 사물함, 필통을 깔끔하게 정리해 두는 것을 좋아한다.' },
+      { id: 19, domain: '계획', text: '나는 약속 시간이나 학급 규칙을 잘 지키려고 노력하는 편이다.' },
+      { id: 20, domain: '계획', text: '나는 큰 과제가 주어지면 작은 단계로 나누어 차근차근 해결하는 편이다.' }
+    ];
+
+    const SCALE_OPTIONS = [
+      { value: 1, label: '전혀 아니다' },
+      { value: 2, label: '아닌 편이다' },
+      { value: 3, label: '그런 편이다' },
+      { value: 4, label: '매우 그렇다' }
+    ];
+
+    const DOMAIN_META = {
+      탐구: { emoji: '🔍', title: '파트 1. 궁금한 걸 파헤치는 나 (탐구)', color: '#0284c7', bg: 'bg-sky-50', text: 'text-sky-700', bar: 'bg-sky-500' },
+      표현: { emoji: '🎨', title: '파트 2. 생각을 표현하는 나 (표현)', color: '#7c3aed', bg: 'bg-violet-50', text: 'text-violet-700', bar: 'bg-violet-500' },
+      협력: { emoji: '🤝', title: '파트 3. 친구와 함께하는 나 (협력)', color: '#059669', bg: 'bg-emerald-50', text: 'text-emerald-700', bar: 'bg-emerald-500' },
+      계획: { emoji: '📅', title: '파트 4. 차근차근 실천하는 나 (계획)', color: '#d97706', bg: 'bg-amber-50', text: 'text-amber-700', bar: 'bg-amber-500' }
+    };
+
+    // MBTI 및 홀랜드(Holland) 연계 성향 프로필
+    const TYPE_PROFILES = {
+      탐구: {
+        nickname: '호기심 과학자',
+        theory: '홀랜드 I(탐구형) · MBTI NT(분석형) 경향',
+        desc: '사물의 원리를 깊이 파고들고 궁금증을 스스로 해결하려는 의지가 강합니다. 논리적인 질문과 자료 탐색에서 뛰어난 집중력을 발휘합니다.',
+        role: '모둠 자료 조사원, 실험·관찰 기록장, 탐구 프로젝트 리더',
+        habit: '단순 암기보다 "왜 그럴까?"를 해결하는 탐구 학습이 효과적입니다. 궁금한 주제를 탐구 노트에 적고 스스로 답을 찾아보도록 격려해 주세요.',
+        encourage: '호기심이 가득한 멋진 탐구왕이에요! 궁금한 것을 끝까지 찾아보는 힘은 앞으로 큰 보물이 될 거예요.'
+      },
+      표현: {
+        nickname: '반짝이는 크리에이터',
+        theory: '홀랜드 A(예술형) · MBTI NF/NP(창의·표현형) 경향',
+        desc: '풍부한 상상력과 독창적인 아이디어를 가지고 있으며, 글·그림·발표 등 다양한 방식으로 자신의 생각을 드러내는 데 강점이 있습니다.',
+        role: '발표 담당, 포스터·시각 자료 디자이너, 아이디어 뱅크',
+        habit: '배운 내용을 마인드맵, 4컷 만화, 1분 스피치 등으로 자유롭게 표현하는 학습 습관이 잘 맞습니다. 남다른 시도를 아낌없이 칭찬해 주세요.',
+        encourage: '반짝이는 아이디어가 넘치는 멋진 크리에이터예요! 너만의 개성 있는 표현으로 교실을 더욱 즐겁게 만들어 줘요.'
+      },
+      협력: {
+        nickname: '따뜻한 소통 리더',
+        theory: '홀랜드 S(사회형) · MBTI FJ(공감·조화형) 경향',
+        desc: '친구의 이야기를 잘 경청하고 배려하며, 함께 힘을 합쳐 목표를 이룰 때 높은 성취감을 느끼는 관계 중심형입니다.',
+        role: '모둠장, 토의 진행자, 갈등 중재자, 학급 도우미',
+        habit: '친구와 서로 설명해 주는 짝 학습·모둠 토의에서 학습 효과가 높습니다. 혼자 하는 과제도 작은 목표를 세워 성취감을 느낄 수 있게 도와주세요.',
+        encourage: '친구들의 마음을 잘 헤아리는 따뜻한 소통 리더예요! 네가 있어서 우리 반 분위기가 늘 밝고 든든해요.'
+      },
+      계획: {
+        nickname: '든든한 학급 매니저',
+        theory: '홀랜드 C(관습형) · MBTI SJ(체계·실천형) 경향',
+        desc: '약속과 학급 규칙을 성실히 지키고, 과제를 단계별로 나누어 끝까지 깔끔하게 마무리하는 자기관리 능력이 우수합니다.',
+        role: '시간 관리자, 준비물·과제 점검 담당, 학급 서기',
+        habit: '체크리스트와 학습 플래너 활용에 강점이 있습니다. 예상치 못한 상황으로 계획이 바뀌었을 때 유연하게 대처하는 연습을 함께 지도해 주세요.',
+        encourage: '맡은 일을 끝까지 해내는 든든한 학급 매니저예요! 차근차근 실천하는 멋진 습관을 앞으로도 계속 이어가 보아요.'
+      }
+    };
+
+    const GROWTH_TIPS = {
+      탐구: '생활 속 작은 호기심을 하루에 하나씩 질문으로 적어보는 "오늘의 왜?" 활동을 추천합니다.',
+      표현: '부담 없는 짝 발표나 짧은 키워드 메모부터 시작해 자신의 생각을 드러내는 자신감을 키워주세요.',
+      협력: '역할이 명확하게 나뉜 소규모(2~3명) 모둠 활동부터 경험하면 협동이 한결 편안해집니다.',
+      계획: '하루에 꼭 해야 할 일 3가지만 포스트잇에 적어 지워나가는 작은 실천 습관부터 시작해 보세요.'
+    };
+
+    // 기본 샘플 데이터 3명 (김민수, 이서연, 박지훈)
+    const SAMPLE_STUDENTS = [
+      {
+        id: 'sample-1',
+        name: '김민수',
+        timestamp: '2026-11-20 09:15:20',
+        scores: { 탐구: 19, 표현: 14, 협력: 12, 계획: 16 },
+        primaryType: '탐구'
+      },
+      {
+        id: 'sample-2',
+        name: '이서연',
+        timestamp: '2026-11-20 09:22:45',
+        scores: { 탐구: 13, 표현: 19, 협력: 17, 계획: 11 },
+        primaryType: '표현'
+      },
+      {
+        id: 'sample-3',
+        name: '박지훈',
+        timestamp: '2026-11-20 09:31:10',
+        scores: { 탐구: 14, 표현: 12, 협력: 18, 계획: 18 },
+        primaryType: '협력·계획'
+      }
+    ];
+
+    /* =====================================================================
+     * 2. 상태 관리 및 localStorage 유틸리티
+     * ===================================================================== */
+    let currentStudentName = '';
+    let currentAnswers = {};
+    let selectedStudentId = null;
+    let radarChartInstance = null;
+
+    function loadStudents() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(SAMPLE_STUDENTS));
+          return [...SAMPLE_STUDENTS];
+        }
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed) || parsed.length === 0) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(SAMPLE_STUDENTS));
+          return [...SAMPLE_STUDENTS];
+        }
+        return parsed;
+      } catch (e) {
+        return [...SAMPLE_STUDENTS];
+      }
+    }
+
+    function saveStudentRecord(record) {
+      const list = loadStudents();
+      list.unshift(record); // 최신 제출 학생을 맨 위로
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+      } catch (e) {
+        console.error('localStorage 저장 오류:', e);
+      }
+    }
+
+    function formatNow() {
+      const d = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    }
+
+    /* =====================================================================
+     * 3. 라우팅 및 탭 전환 (?page=dashboard 지원)
+     * ===================================================================== */
+    function switchTab(tabName) {
+      const surveyView = document.getElementById('surveyView');
+      const dashboardView = document.getElementById('dashboardView');
+      const tabSurveyBtn = document.getElementById('tabSurveyBtn');
+      const tabDashboardBtn = document.getElementById('tabDashboardBtn');
+
+      if (tabName === 'dashboard') {
+        surveyView.classList.add('hidden');
+        dashboardView.classList.remove('hidden');
+        tabDashboardBtn.className = 'px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-bold bg-white text-indigo-700 shadow-sm transition-all';
+        tabSurveyBtn.className = 'px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-bold text-slate-500 hover:text-slate-700 transition-all';
+        renderDashboard();
+      } else {
+        dashboardView.classList.add('hidden');
+        surveyView.classList.remove('hidden');
+        tabSurveyBtn.className = 'px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-bold bg-white text-indigo-700 shadow-sm transition-all';
+        tabDashboardBtn.className = 'px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-bold text-slate-500 hover:text-slate-700 transition-all';
+      }
+
+      // URL 쿼리 파라미터 동기화 (오류 방지용 try-catch)
+      try {
+        const url = new URL(window.location.href);
+        if (tabName === 'dashboard') {
+          url.searchParams.set('page', 'dashboard');
+        } else {
+          url.searchParams.delete('page');
+        }
+        window.history.replaceState({}, '', url.toString());
+      } catch (e) {
+        // sandboxed iframe 등에서는 무시
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    /* =====================================================================
+     * 4. 학생용 설문 (Survey) 로직
+     * ===================================================================== */
+    function handleStudentLogin() {
+      const nameInput = document.getElementById('inputStudentName');
+      const pwInput = document.getElementById('inputStudentPw');
+      const errorBox = document.getElementById('loginErrorBox');
+
+      const name = nameInput.value.trim();
+      const pw = pwInput.value.trim();
+
+      if (!name) {
+        errorBox.textContent = '⚠️ 이름을 먼저 입력해 주세요.';
+        errorBox.classList.remove('hidden');
+        nameInput.focus();
+        return;
+      }
+
+      if (pw !== ENTRY_PASSWORD) {
+        errorBox.textContent = '⚠️ 입장 암호가 올바르지 않아요. 선생님께 암호(2026)를 확인해 주세요.';
+        errorBox.classList.remove('hidden');
+        pwInput.focus();
+        return;
+      }
+
+      errorBox.classList.add('hidden');
+      currentStudentName = name;
+      currentAnswers = {};
+
+      document.getElementById('surveyStudentBadge').textContent = `👤 ${currentStudentName} 학생`;
+      document.getElementById('studentLoginCard').classList.add('hidden');
+      document.getElementById('studentCompleteCard').classList.add('hidden');
+      document.getElementById('studentSurveyArea').classList.remove('hidden');
+
+      renderSurveyQuestions();
+      updateSurveyProgress();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function renderSurveyQuestions() {
+      const wrapper = document.getElementById('questionsWrapper');
+      const domains = ['탐구', '표현', '협력', '계획'];
+
+      wrapper.innerHTML = domains.map(domain => {
+        const meta = DOMAIN_META[domain];
+        const items = QUESTIONS.filter(q => q.domain === domain);
+
+        const itemsHtml = items.map(q => `
+          <div class="py-5 border-b border-slate-100 last:border-b-0">
+            <p class="text-sm sm:text-base font-bold text-slate-800 mb-3.5 leading-snug">
+              <span class="inline-block w-6 text-indigo-500 font-extrabold">${q.id}.</span>${q.text}
+            </p>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              ${SCALE_OPTIONS.map(opt => `
+                <div>
+                  <input type="radio" id="q${q.id}_${opt.value}" name="q${q.id}" value="${opt.value}"
+                    class="scale-radio hidden" onchange="onSelectAnswer(${q.id}, ${opt.value})">
+                  <label for="q${q.id}_${opt.value}"
+                    class="flex items-center justify-center text-center px-2 py-3 rounded-xl border-2 border-slate-200 text-xs sm:text-sm font-medium text-slate-500 cursor-pointer hover:border-indigo-300 hover:bg-slate-50 transition-all select-none">
+                    ${opt.label}
+                  </label>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `).join('');
+
+        return `
+          <div class="bg-white rounded-3xl border border-slate-200 p-5 sm:p-7 shadow-sm">
+            <div class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full ${meta.bg} ${meta.text} text-xs sm:text-sm font-extrabold mb-2">
+              <span>${meta.emoji}</span>
+              <span>${meta.title}</span>
+            </div>
+            <div>${itemsHtml}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function onSelectAnswer(qId, value) {
+      currentAnswers['q' + qId] = value;
+      updateSurveyProgress();
+    }
+
+    function updateSurveyProgress() {
+      const answeredCount = Object.keys(currentAnswers).length;
+      const total = QUESTIONS.length;
+      const remaining = total - answeredCount;
+      const percent = Math.round((answeredCount / total) * 100);
+
+      document.getElementById('surveyProgressText').textContent = `${answeredCount} / ${total} 문항 완료`;
+      document.getElementById('surveyProgressBar').style.width = `${percent}%`;
+
+      const submitBtn = document.getElementById('btnSubmitSurvey');
+      const hintEl = document.getElementById('submitStatusHint');
+
+      if (remaining === 0) {
+        submitBtn.disabled = false;
+        hintEl.innerHTML = '✅ <span class="text-emerald-600 font-bold">20문항을 모두 완료했어요!</span> 아래 버튼을 눌러 결과를 확인하세요.';
+      } else {
+        submitBtn.disabled = true;
+        hintEl.innerHTML = `아직 체크하지 않은 문항이 <span class="text-indigo-600 font-extrabold">${remaining}개</span> 남았어요. 모든 문항에 체크해야 제출할 수 있어요!`;
+      }
+    }
+
+    function handleSurveySubmit() {
+      if (Object.keys(currentAnswers).length < QUESTIONS.length) return;
+
+      const sumRange = (start, end) => {
+        let sum = 0;
+        for (let i = start; i <= end; i++) {
+          sum += Number(currentAnswers['q' + i] || 0);
+        }
+        return sum;
+      };
+
+      const scores = {
+        탐구: sumRange(1, 5),
+        표현: sumRange(6, 10),
+        협력: sumRange(11, 15),
+        계획: sumRange(16, 20)
+      };
+
+      const maxScore = Math.max(scores.탐구, scores.표현, scores.협력, scores.계획);
+      const topDomains = Object.keys(scores).filter(k => scores[k] === maxScore);
+      const primaryType = topDomains.join('·');
+
+      const newRecord = {
+        id: 'stu-' + Date.now(),
+        name: currentStudentName,
+        timestamp: formatNow(),
+        scores: scores,
+        primaryType: primaryType
+      };
+
+      saveStudentRecord(newRecord);
+      selectedStudentId = newRecord.id;
+      showCompleteScreen(newRecord);
+    }
+
+    function showCompleteScreen(record) {
+      document.getElementById('studentSurveyArea').classList.add('hidden');
+      document.getElementById('studentCompleteCard').classList.remove('hidden');
+
+      const mainKey = record.primaryType.split('·')[0];
+      const profile = TYPE_PROFILES[mainKey] || TYPE_PROFILES['탐구'];
+
+      document.getElementById('completeSubtitle').textContent = `${record.name} 학생의 응답이 안전하게 저장되었어요.`;
+      document.getElementById('completeTypeBadge').textContent = `${record.primaryType} 성향`;
+      document.getElementById('completeTypeNick').textContent = `${profile.nickname} (${profile.theory})`;
+
+      document.getElementById('completeScoreCards').innerHTML = Object.entries(record.scores).map(([k, v]) => {
+        const meta = DOMAIN_META[k];
+        return `
+          <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3.5">
+            <div class="text-xs font-bold ${meta.text} mb-1">${meta.emoji} ${k}</div>
+            <div class="text-xl font-extrabold text-slate-800">${v}<span class="text-xs font-medium text-slate-400"> / 20</span></div>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('completeEncourageBox').textContent = `💌 "${profile.encourage}"`;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function resetSurveyFlow() {
+      currentStudentName = '';
+      currentAnswers = {};
+      document.getElementById('inputStudentName').value = '';
+      document.getElementById('inputStudentPw').value = '';
+      document.getElementById('loginErrorBox').classList.add('hidden');
+
+      document.getElementById('studentCompleteCard').classList.add('hidden');
+      document.getElementById('studentSurveyArea').classList.add('hidden');
+      document.getElementById('studentLoginCard').classList.remove('hidden');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function goToDashboardWithLatest() {
+      switchTab('dashboard');
+    }
+
+    /* =====================================================================
+     * 5. 교사용 분석표 (Dashboard) 로직
+     * ===================================================================== */
+    function renderDashboard() {
+      const students = loadStudents();
+      updateClassSummary(students);
+
+      if (students.length > 0) {
+        const exists = students.some(s => s.id === selectedStudentId);
+        if (!exists) {
+          selectedStudentId = students[0].id;
+        }
+      } else {
+        selectedStudentId = null;
+      }
+
+      renderStudentList();
+      if (selectedStudentId) {
+        const target = students.find(s => s.id === selectedStudentId);
+        if (target) renderStudentReport(target);
+      }
+    }
+
+    function updateClassSummary(students) {
+      const n = students.length;
+      document.getElementById('summaryTotal').textContent = `${n}명`;
+
+      const calcAvg = key => {
+        if (n === 0) return '0.0';
+        const sum = students.reduce((acc, s) => acc + (s.scores[key] || 0), 0);
+        return (sum / n).toFixed(1);
+      };
+
+      document.getElementById('summaryInquiry').innerHTML = `${calcAvg('탐구')} <span class="text-xs font-medium text-slate-400">/ 20</span>`;
+      document.getElementById('summaryExpression').innerHTML = `${calcAvg('표현')} <span class="text-xs font-medium text-slate-400">/ 20</span>`;
+      document.getElementById('summaryCooperation').innerHTML = `${calcAvg('협력')} <span class="text-xs font-medium text-slate-400">/ 20</span>`;
+      document.getElementById('summaryPlanning').innerHTML = `${calcAvg('계획')} <span class="text-xs font-medium text-slate-400">/ 20</span>`;
+    }
+
+    function renderStudentList() {
+      const students = loadStudents();
+      const keyword = (document.getElementById('studentSearchInput').value || '').trim().toLowerCase();
+      const container = document.getElementById('studentListContainer');
+
+      const filtered = students.filter(s => s.name.toLowerCase().includes(keyword));
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="text-center py-10 text-xs text-slate-400 font-medium">검색 결과가 없습니다.</div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(s => {
+        const isActive = s.id === selectedStudentId;
+        return `
+          <button onclick="selectStudent('${s.id}')"
+            class="w-full text-left p-3.5 rounded-2xl border transition-all ${
+              isActive
+                ? 'border-indigo-500 bg-indigo-50/70 shadow-sm'
+                : 'border-slate-200 bg-white hover:bg-slate-50'
+            }">
+            <div class="flex items-center justify-between gap-2 mb-1">
+              <span class="font-extrabold text-sm text-slate-800">${s.name}</span>
+              <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-100 text-indigo-700">${s.primaryType}형</span>
+            </div>
+            <div class="text-[11px] text-slate-400">${s.timestamp}</div>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function selectStudent(id) {
+      selectedStudentId = id;
+      const students = loadStudents();
+      const target = students.find(s => s.id === id);
+      renderStudentList();
+      if (target) {
+        renderStudentReport(target);
+      }
+    }
+
+    function renderStudentReport(student) {
+      document.getElementById('btnPrintPdf').disabled = false;
+
+      const primaryKey = student.primaryType.split('·')[0];
+      const profile = TYPE_PROFILES[primaryKey] || TYPE_PROFILES['탐구'];
+
+      // 가장 낮은 점수 영역 도출 (균형 성장 포인트)
+      const scoreEntries = Object.entries(student.scores);
+      const lowestEntry = scoreEntries.reduce((min, cur) => (cur[1] < min[1] ? cur : min), scoreEntries[0]);
+      const lowestKey = lowestEntry[0];
+
+      const reportEl = document.getElementById('reportContainer');
+      reportEl.innerHTML = `
+        <!-- 리포트 헤더 -->
+        <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3 pb-5 border-b-2 border-slate-100 mb-6">
+          <div>
+            <span class="inline-block text-xs font-bold text-indigo-600 mb-1">초등 활동 성향 개별 분석 리포트</span>
+            <h3 class="text-2xl font-extrabold text-slate-800">${student.name} 학생</h3>
+            <p class="text-xs text-slate-500 mt-1">제출일시: ${student.timestamp} · ${profile.theory}</p>
+          </div>
+          <div class="inline-flex flex-col sm:items-end">
+            <span class="px-4 py-1.5 rounded-full bg-indigo-600 text-white text-sm font-extrabold shadow-sm">
+              ${student.primaryType} 성향 · ${profile.nickname}
+            </span>
+          </div>
+        </div>
+
+        <!-- 레이더 차트 & 영역별 막대 그래프 -->
+        <div class="print-grid-2 grid grid-cols-1 md:grid-cols-2 gap-6 items-center mb-7 print-break-avoid">
+          <div class="bg-slate-50 rounded-2xl p-4 border border-slate-100 flex items-center justify-center">
+            <div class="w-full max-w-[280px] aspect-square">
+              <canvas id="studentRadarCanvas"></canvas>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            ${scoreEntries.map(([domain, score]) => {
+              const meta = DOMAIN_META[domain];
+              const pct = Math.round((score / 20) * 100);
+              return `
+                <div>
+                  <div class="flex items-center justify-between text-sm font-bold mb-1.5">
+                    <span class="text-slate-700">${meta.emoji} ${domain} 성향</span>
+                    <span class="text-slate-800">${score} <span class="text-xs font-medium text-slate-400">/ 20점</span></span>
+                  </div>
+                  <div class="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
+                    <div class="h-full ${meta.bar} rounded-full transition-all duration-500" style="width: ${pct}%"></div>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+
+        <!-- 4대 맞춤형 지도 조언 카드 -->
+        <div class="print-grid-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="print-break-avoid bg-indigo-50/60 border border-indigo-100 rounded-2xl p-4">
+            <h4 class="text-sm font-extrabold text-indigo-800 mb-1.5">✨ 핵심 강점 해석</h4>
+            <p class="text-xs sm:text-sm text-slate-700 leading-relaxed">${profile.desc}</p>
+          </div>
+
+          <div class="print-break-avoid bg-sky-50/60 border border-sky-100 rounded-2xl p-4">
+            <h4 class="text-sm font-extrabold text-sky-800 mb-1.5">🧩 추천 학급·모둠 역할</h4>
+            <p class="text-xs sm:text-sm text-slate-700 leading-relaxed">${profile.role}</p>
+          </div>
+
+          <div class="print-break-avoid bg-emerald-50/60 border border-emerald-100 rounded-2xl p-4">
+            <h4 class="text-sm font-extrabold text-emerald-800 mb-1.5">📚 학습·생활습관 지도 조언</h4>
+            <p class="text-xs sm:text-sm text-slate-700 leading-relaxed">${profile.habit}</p>
+          </div>
+
+          <div class="print-break-avoid bg-amber-50/60 border border-amber-100 rounded-2xl p-4">
+            <h4 class="text-sm font-extrabold text-amber-800 mb-1.5">🌱 균형 성장 포인트 (${lowestKey} 영역)</h4>
+            <p class="text-xs sm:text-sm text-slate-700 leading-relaxed">${GROWTH_TIPS[lowestKey]}</p>
+          </div>
+        </div>
+      `;
+
+      // Chart.js 레이더 차트 렌더링
+      if (radarChartInstance) {
+        radarChartInstance.destroy();
+      }
+      const ctx = document.getElementById('studentRadarCanvas').getContext('2d');
+      radarChartInstance = new Chart(ctx, {
+        type: 'radar',
+        data: {
+          labels: ['탐구', '표현', '협력', '계획'],
+          datasets: [{
+            label: `${student.name} 점수`,
+            data: [
+              student.scores.탐구,
+              student.scores.표현,
+              student.scores.협력,
+              student.scores.계획
+            ],
+            backgroundColor: 'rgba(79, 70, 229, 0.2)',
+            borderColor: '#4f46e5',
+            borderWidth: 2.5,
+            pointBackgroundColor: '#4f46e5',
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 2,
+            pointRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          scales: {
+            r: {
+              min: 0,
+              max: 20,
+              ticks: {
+                stepSize: 5,
+                backdropColor: 'transparent',
+                font: { size: 10 }
+              },
+              pointLabels: {
+                font: {
+                  family: "'Noto Sans KR', sans-serif",
+                  size: 13,
+                  weight: '700'
+                },
+                color: '#334155'
+              },
+              grid: { color: '#e2e8f0' },
+              angleLines: { color: '#e2e8f0' }
+            }
+          },
+          plugins: {
+            legend: { display: false }
+          }
+        }
+      });
+    }
+
+    /* =====================================================================
+     * 6. 초기 실행 (URL 파라미터 체크)
+     * ===================================================================== */
+    window.addEventListener('DOMContentLoaded', () => {
+      loadStudents(); // 샘플 데이터 초기화 보장
+      const params = new URLSearchParams(window.location.search);
+      const page = (params.get('page') || '').toLowerCase();
+      if (page === 'dashboard') {
+        switchTab('dashboard');
+      } else {
+        switchTab('survey');
+      }
+    });
+  </script>
+</body>
+</html>
